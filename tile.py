@@ -8,18 +8,12 @@ from enum import Enum
 class State(Enum):
     covered = 0
     flag = 1
-    unknnown = 2
+    unknown = 2
     visible = 3
 
 
-class Symbol(Enum):
-    mine = '*'
-    empty = ' '
-
-
 class Tile:
-
     def __init__(self):
-        self.character = Symbol.empty
-        self.is_covered = State.covered
+        self.character = '_'
+        self.state = State.covered
         self.is_mine = False
