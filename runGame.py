@@ -80,6 +80,20 @@ class Game:
         elif count == 8:
             self._grid[x][y].character = '8'
 
+    # checks if the game was won
+    def _check_win(self):
+        all_visible = True
+        all_mines = True
+
+        for col in self._grid:
+            for element in col:
+                if element.is_mine and element.state != tile.State.flag:
+                    all_mines = False
+                elif not element.is_mine and element.state != tile.State.visible:
+                    all_visible = False
+
+        return all_visible or all_mines
+
     # runs the game
     def run(self):
         self._populate()
