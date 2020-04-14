@@ -3,7 +3,7 @@
 # This file plays the mines game
 
 import random
-from tile import *
+import tile
 
 SIZE = 20
 MINES = 40
@@ -17,14 +17,14 @@ class Game:
         for i in range(SIZE):
             self._grid.append([])
             for j in range(SIZE):
-                self._grid[i].append(Tile())
+                self._grid[i].append(tile.Tile())
 
     # clear the grid
     def _clear(self):
         for col in self._grid:
             for element in col:
                 element.character = '_'
-                element.state = State.covered
+                element.state = tile.State.covered
                 element.is_mine = False
 
     # Clear the grid and populate it with mines
@@ -91,7 +91,18 @@ class Game:
     def print(self):
         for col in self._grid:
             for element in col:
-                print(element.character, end='')
+                char = 'A'
+
+                if element.state == tile.State.covered:
+                    char = '-'
+                elif element.state == tile.State.visible:
+                    char = element.character
+                elif element.state == tile.State.flag:
+                    char = 'F'
+                elif element.state == tile.State.unknown:
+                    char = '?'
+
+                print(char, end='')
             print()
 
 
