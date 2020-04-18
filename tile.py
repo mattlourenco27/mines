@@ -4,6 +4,9 @@
 
 from enum import Enum
 
+BLANK = '\u25A1'
+COVERED = '\u25A8'
+FLAG = u"\U0001F6A9"
 
 class State(Enum):
     covered = 0
@@ -13,6 +16,7 @@ class State(Enum):
 
 
 class Tile:
+
     def __init__(self):
         self.character = '_'
         self.state = State.covered

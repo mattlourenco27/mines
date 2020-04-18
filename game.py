@@ -5,18 +5,19 @@
 import random
 import tile
 
-SIZE = 20
-MINES = 40
-
 
 # This class controls the mines game
 class Game:
+
+    SIZE = 20
+    MINES = 40
+
     def __init__(self):
         # grid that will be used to store the game board
         self._grid = []
-        for i in range(SIZE):
+        for i in range(Game.SIZE):
             self._grid.append([])
-            for j in range(SIZE):
+            for j in range(Game.SIZE):
                 self._grid[i].append(tile.Tile())
 
     # clear the grid
@@ -31,13 +32,13 @@ class Game:
     def _populate(self):
         self._clear()
 
-        mines = MINES
+        mines = Game.MINES
 
         random.seed()
 
         while mines > 0:
-            x = random.randint(0, SIZE - 1)
-            y = random.randint(0, SIZE - 1)
+            x = random.randint(0, Game.SIZE - 1)
+            y = random.randint(0, Game.SIZE - 1)
 
             if self._grid[x][y].is_mine:
                 continue
@@ -48,7 +49,7 @@ class Game:
 
     # update what number a given tile should display
     def _update_tile_value(self, x, y):
-        if x < 0 or y < 0 or x >= SIZE or y >= SIZE:
+        if x < 0 or y < 0 or x >= Game.SIZE or y >= Game.SIZE:
             print("Access to grid out of range [" + str(x) + "][" + str(y) + "]")
 
         if self._grid[x][y].is_mine:
@@ -58,11 +59,11 @@ class Game:
 
         for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
-                if (i >= 0 and i < SIZE and j >= 0 and j < SIZE and self._grid[i][j].is_mine):
+                if (i >= 0 and i < Game.SIZE and j >= 0 and j < Game.SIZE and self._grid[i][j].is_mine):
                     count += 1
 
         if count == 0:
-            self._grid[x][y].character = ' '
+            self._grid[x][y].character = tile.BLANK
         elif count == 1:
             self._grid[x][y].character = '1'
         elif count == 2:
@@ -98,8 +99,8 @@ class Game:
     def run(self):
         self._populate()
 
-        for x in range(SIZE):
-            for y in range(SIZE):
+        for x in range(Game.SIZE):
+            for y in range(Game.SIZE):
                 self._update_tile_value(x, y)
 
     def print(self):
@@ -108,15 +109,15 @@ class Game:
                 char = 'A'
 
                 if element.state == tile.State.covered:
-                    char = '-'
+                    char = tile.COVERED
                 elif element.state == tile.State.visible:
                     char = element.character
                 elif element.state == tile.State.flag:
-                    char = 'F'
+                    char = tile.FLAG
                 elif element.state == tile.State.unknown:
                     char = '?'
 
-                print(char, end='')
+                print(char + ' ', end='')
             print()
 
 
