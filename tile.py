@@ -6,7 +6,8 @@ from enum import Enum
 
 BLANK = '\u25A1'
 COVERED = '\u25A8'
-FLAG = u"\U0001F6A9"
+FLAG = '\u2690'
+UNKNOWN = '?'
 
 class State(Enum):
     covered = 0

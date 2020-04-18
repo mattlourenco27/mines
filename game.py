@@ -115,7 +115,7 @@ class Game:
                 elif element.state == tile.State.flag:
                     char = tile.FLAG
                 elif element.state == tile.State.unknown:
-                    char = '?'
+                    char = tile.UNKNOWN
 
                 print(char + ' ', end='')
             print()
