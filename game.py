@@ -14,6 +14,17 @@ class Error(Exception):
     pass
 
 
+class SizeError(Error):
+    """Exception raised when the size of the board is invalid
+
+    Attributes:
+        - message
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
 class MineError(Error):
     """Exception raised when number of mines is invalid
 
@@ -94,6 +105,10 @@ class Game:
         self._state = State.beforeStart
         self._flags = 0
 
+    # returns true if the game is done
+    def game_done(self) -> bool:
+        return self._state is State.victory or self._state is State.loss
+
     # sets the number of mines in the game if it is a valid game state
     def set_mines(self, m: int):
         if self._state is not State.ongoing:
@@ -103,6 +118,11 @@ class Game:
     # updates the size of self._grid and calls self.reset()
     def set_size(self, s: int):
         if self._state is not State.ongoing:
+            if s < 10:
+                raise SizeError("Invalid board size. size is less than 10")
+            if s > 100:
+                raise SizeError("Invalid board size. size is greater than 100")
+
             self._size = s
 
             self._grid.clear()
@@ -293,14 +313,73 @@ class Game:
         return all_visible or all_mines
 
     def print(self):
-        for col in self._grid:
-            for element in col:
-                print(str(element) + ' ', end='')
+        for y in range(len(self._grid[0])):
+            for x in range(len(self._grid)):
+                print(str(self._grid[x][y]) + ' ', end='')
             print()
 
 
 if __name__ == "__main__":
     g = Game()
-    g.print()
-    g.set_size(5)
-    g.print()
+
+    print("Welcome to mines! Created by mattlourenco27 on github")
+
+    # get size and number of mines
+    size: int
+    while True:
+        try:
+            size = int(input("Enter the size of the grid: "))
+            g.set_size(size)
+            g.print()
+            break
+        except ValueError:
+            print("Please enter an integer")
+        except SizeError:
+            print("Please enter a grid between 10 and 100 tiles wide")
+
+    mines: int
+    while True:
+        try:
+            mines = int(input("Enter the number of mines on the grid: "))
+            break
+        except ValueError:
+            print("Please enter an integer")
+
+    g.set_mines(mines)
+
+    print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
+    g.begin()
+
+    while not g.game_done():
+        # print the grid
+        g.print()
+
+        # get the next move
+        left: bool = True
+        x: int
+        y: int
+        while True:
+            try:
+                user_in = input("Enter your next move: ")
+                values = user_in.split(' ')
+
+                if values[0].capitalize() != 'L' and values[0].capitalize() != 'R':
+                    print("Please enter L or R for 'left' or 'right' click")
+                    print(values[0].capitalize() + '|')
+                    continue
+
+                left = values[0].capitalize() == 'L'
+                x = int(values[1])
+                y = int(values[2])
+
+                if left:
+                    g.left_mouse_button(x, y)
+                else:
+                    g.right_mouse_button(x, y)
+
+                break
+            except ValueError:
+                print("Please enter valid integers in your expression")
+            except TilePositionError as err:
+                print(err)
+                print("Please enter a valid expression")
