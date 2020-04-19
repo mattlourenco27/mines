@@ -27,16 +27,16 @@ class Tile:
         self._value = BLANK
         self.state = State.covered
 
-    def is_blank(self):
+    def is_blank(self) -> bool:
         return self._value == BLANK
 
-    def is_mine(self):
+    def is_mine(self) -> bool:
         return self._value == MINE
 
-    def get_value(self):
+    def get_value(self) -> int:
         return self._value
 
-    def set_value(self, v):
+    def set_value(self, v: int):
         self._value = v
 
     def __str__(self):
