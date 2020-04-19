@@ -113,7 +113,24 @@ class Game:
 
             self.reset()
 
-    # Reveals the tile at the specified x, y coordinate
+    # returns the tile value at a given position if it is visible
+    def get_tile_value(self, x, y):
+        if x < 0 or y < 0 or x >= self._size or y >= self._size:
+            raise TilePositionError("Access to Tile out of range", self._size, (x, y))
+
+        if self._grid[x][y].state is tile.State.visible:
+            return self._grid[x][y].get_value()
+        else:
+            return 0
+
+    # returns the tile state at a given position
+    def get_tile_state(self, x, y):
+        if x < 0 or y < 0 or x >= self._size or y >= self._size:
+            raise TilePositionError("Access to Tile out of range", self._size, (x, y))
+
+        return self._grid[x][y].state
+
+    # reveals the tile at the specified x, y coordinate
     def left_mouse_button(self, x, y):
         if x < 0 or y < 0 or x >= self._size or y >= self._size:
             raise TilePositionError("Access to Tile out of range", self._size, (x, y))
