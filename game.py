@@ -181,11 +181,11 @@ class Game:
                 element.state = tile.State.covered
 
     # populates the grid with mines
-    # Does not generate mines on init x and y
+    # Does not generate mines on the init x and y tile or immediately beside it
     def _populate(self, init_x, init_y):
         mines = self._mines
 
-        if mines >= self._size * self._size:
+        if mines > self._size * self._size - 9:
             raise MineError("Too many mines for this size of board", self._size, self._mines)
 
         random.seed()
@@ -199,7 +199,7 @@ class Game:
                 continue
 
             # if this tile is the initial position do not place a mine
-            if x == init_x and y == init_y:
+            if init_x - 1 <= x <= init_x + 1 and init_y - 1 <= y <= init_y + 1:
                 continue
 
             self._grid[x][y].set_value(tile.MINE)
