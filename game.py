@@ -246,17 +246,19 @@ class Game:
 
         random.seed()
 
+        # populate possible positions
+        positions: [(int, int)] = []
+        for x in range(self._size):
+            for y in range(self._size):
+                # if this tile is the initial position do not place a mine
+                if init_x - 1 <= x <= init_x + 1 and init_y - 1 <= y <= init_y + 1:
+                    pass
+                else:
+                    positions.append((x, y))
+
         while mines > 0:
-            x: int = random.randint(0, self._size - 1)
-            y: int = random.randint(0, self._size - 1)
-
-            # if this is an existing mine tile do not count down mine count
-            if self._grid[x][y].is_mine():
-                continue
-
-            # if this tile is the initial position do not place a mine
-            if init_x - 1 <= x <= init_x + 1 and init_y - 1 <= y <= init_y + 1:
-                continue
+            x, y = random.choice(positions)
+            positions.remove((x, y))
 
             self._grid[x][y].set_value(tile.MINE)
             mines -= 1
