@@ -32,16 +32,21 @@ class MineError(Error):
         - message
         - size - the size of the grid
         - mines - the number of mines
+        - non_positive - true if the number of mines is 0 or less
     """
 
     def __init__(self, message, size, mines):
         self.message = message
         self.size = size
         self.mines = mines
+        self.non_positive = mines <= 0
 
     def __str__(self):
-        return self.message + ". The grid has " + str(self.size * self.size) + " tiles and " + str(
-            self.mines) + " mines"
+        if self.non_positive:
+            return self.message + ". Attempted to set " + str(self.mines) + " mines"
+        else:
+            return self.message + ". The grid has " + str(self.size * self.size) + " tiles and " + str(
+                self.mines) + " mines"
 
 
 class TilePositionError(Error):
@@ -95,6 +100,9 @@ class Game:
 
     # begin the game
     def begin(self):
+        if self._mines > self._size * self._size - 9:
+            raise MineError("Too many mines for this size of board", self._size, self._mines)
+
         if self._state is State.beforeStart:
             self._state = State.ongoing
             self._first_click = False
@@ -118,6 +126,9 @@ class Game:
 
     # sets the number of mines in the game if it is a valid game state
     def set_mines(self, m: int):
+        if m <= 0:
+            raise MineError("Number of mines cannot be 0 or less", self._size, m)
+
         if self._state is not State.ongoing:
             self._mines = m
 
@@ -348,14 +359,16 @@ if __name__ == "__main__":
     while True:
         try:
             mines = int(input("Enter the number of mines on the grid: "))
+            g.set_mines(mines)
+            g.begin()
             break
         except ValueError:
             print("Please enter an integer")
-
-    g.set_mines(mines)
+        except MineError as err:
+            print(err)
+            print("Please enter a valid number of mines")
 
     print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
-    g.begin()
 
     while not g.game_done():
         # print the grid
@@ -370,9 +383,12 @@ if __name__ == "__main__":
                 user_in = input("Enter your next move: ")
                 values = user_in.split(' ')
 
+                if values[0].capitalize() == 'Q':
+                    print("Exiting...")
+                    quit()
+
                 if values[0].capitalize() != 'L' and values[0].capitalize() != 'R':
                     print("Please enter L or R for 'left' or 'right' click")
-                    print(values[0].capitalize() + '|')
                     continue
 
                 left = values[0].capitalize() == 'L'
