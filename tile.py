@@ -2,7 +2,7 @@
 # Created by: Matthew Lourenco
 # This file is a class for a tile in the mines game
 
-from enum import Enum
+from enum import Enum, auto
 
 BLANK = 0
 _BLANK_CHAR = '\u25A1'
@@ -13,11 +13,12 @@ _MINE_CHAR = '*'
 MINE = -1
 
 
+# this enum describes the state of the tile
 class State(Enum):
-    covered = 0
-    flag = 1
-    unknown = 2
-    visible = 3
+    covered = auto()
+    flag = auto()
+    unknown = auto()
+    visible = auto()
 
 
 class Tile:
@@ -31,6 +32,9 @@ class Tile:
 
     def is_mine(self):
         return self._value == MINE
+
+    def get_value(self):
+        return self._value
 
     def set_value(self, v):
         self._value = v

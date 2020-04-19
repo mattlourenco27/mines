@@ -4,6 +4,7 @@
 
 import random
 import tile
+from enum import Enum, auto
 
 
 class Error(Exception):
@@ -35,21 +36,94 @@ class TilePositionError(Error):
         self.message = message
 
 
+# this enum describes the state of the game
+class State(Enum):
+    beforeStart = auto()
+    ongoing = auto()
+    loss = auto()
+    victory = auto()
+
+
 # This class controls the mines game
 class Game:
-    SIZE = 20
-    MINES = 40
-
     def __init__(self):
+        # state variable that keeps track of the game
+        self._state = State.beforeStart
+
+        # integers describing the size and format of the game
+        self._size = 20
+        self._mines = 40
+
         # true if board has been clicked once
         self._first_click = False
 
         # grid that will be used to store the game board
         self._grid = []
-        for i in range(Game.SIZE):
+        for i in range(self._size):
             self._grid.append([])
-            for j in range(Game.SIZE):
+            for j in range(self._size):
                 self._grid[i].append(tile.Tile())
+
+    # begin the game
+    def begin(self):
+        if self._state is State.beforeStart:
+            self._state = State.ongoing
+            self._first_click = False
+
+    # resets the game
+    def reset(self):
+        self._clear()
+        self._state = State.beforeStart
+
+    # sets the number of mines in the game if it is a valid game state
+    def set_mines(self, m):
+        if self._state is not State.ongoing:
+            self._mines = m
+
+    # sets the size of the board if it is a valid game state
+    # updates the size of self._grid and calls self.reset()
+    def set_size(self, s):
+        if self._state is not State.ongoing:
+            self._size = s
+
+            self._grid = []
+            for i in range(self._size):
+                self._grid.append([])
+                for j in range(self._size):
+                    self._grid[i].append(tile.Tile())
+
+            self.reset()
+
+    # Reveals the tile at the specified x, y coordinate
+    def left_mouse_button(self, x, y):
+        if x < 0 or y < 0 or x >= self._size or y >= self._size:
+            raise TilePositionError("Access to Tile out of range [" + str(x) + "][" + str(y) + "]")
+
+        if self._state != State.ongoing:
+            return
+
+        if not self._first_click:
+            self._populate(x, y)
+            self._update_all_tiles()
+            self._first_click = True
+
+            self._reveal_adjacent_blanks(x, y)
+
+            if self._check_win():
+                self._state = State.victory
+        elif self._grid[x][y].state != tile.State.visible:
+            if self._grid[x][y].is_blank():
+                self._reveal_adjacent_blanks(x, y)
+
+                if self._check_win():
+                    self._state = State.victory
+            else:
+                self._grid[x][y].state = tile.State.visible
+
+                if self._grid[x][y].is_mine():
+                    self._state = State.loss
+                elif self._check_win():
+                    self._state = State.victory
 
     # clear the grid
     def _clear(self):
@@ -63,16 +137,16 @@ class Game:
     def _populate(self, init_x, init_y):
         self._clear()
 
-        mines = Game.MINES
+        mines = self._mines
 
-        if mines > Game.SIZE * Game.SIZE - 9:
+        if mines > self._size * self._size - 9:
             raise MineError("Too many mines for this size of board")
 
         random.seed()
 
         while mines > 0:
-            x = random.randint(0, Game.SIZE - 1)
-            y = random.randint(0, Game.SIZE - 1)
+            x = random.randint(0, self._size - 1)
+            y = random.randint(0, self._size - 1)
 
             # if this is an existing mine tile do not count down mine count
             if self._grid[x][y].is_mine():
@@ -87,7 +161,7 @@ class Game:
 
     # update what number a given tile should display
     def _update_tile_value(self, x, y):
-        if x < 0 or y < 0 or x >= Game.SIZE or y >= Game.SIZE:
+        if x < 0 or y < 0 or x >= self._size or y >= self._size:
             raise TilePositionError("Access to Tile out of range [" + str(x) + "][" + str(y) + "]")
 
         if self._grid[x][y].is_mine():
@@ -97,15 +171,15 @@ class Game:
 
         for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
-                if 0 <= i < Game.SIZE and 0 <= j < Game.SIZE and self._grid[i][j].is_mine():
+                if 0 <= i < self._size and 0 <= j < self._size and self._grid[i][j].is_mine():
                     count += 1
 
         self._grid[x][y].set_value(count)
 
     # updates all tiles
     def _update_all_tiles(self):
-        for x in range(Game.SIZE):
-            for y in range(Game.SIZE):
+        for x in range(self._size):
+            for y in range(self._size):
                 self._update_tile_value(x, y)
 
     # reveals all blanks that are connected to this tile including itself
@@ -123,30 +197,13 @@ class Game:
 
             for i in range(x_pos - 1, x_pos + 2):
                 for j in range(y_pos - 1, y_pos + 2):
-                    if 0 <= i < Game.SIZE and 0 <= j < Game.SIZE:
+                    if 0 <= i < self._size and 0 <= j < self._size:
                         if self._grid[i][j].is_blank() and self._grid[i][j].state != tile.State.visible:
                             # add all non-visible blanks to the list
                             blanks.append((i, j))
                         else:
                             # make all non-blank adjacent tiles visible
                             self._grid[i][j].state = tile.State.visible
-
-    # Reveals the tile at the specified x, y coordinate
-    def left_mouse_button(self, x, y):
-        if x < 0 or y < 0 or x >= Game.SIZE or y >= Game.SIZE:
-            raise TilePositionError("Access to Tile out of range [" + str(x) + "][" + str(y) + "]")
-
-        if not self._first_click:
-            self._populate(x, y)
-            self._update_all_tiles()
-            self._first_click = True
-
-            self._reveal_adjacent_blanks(x, y)
-        elif self._grid[x][y].state != tile.State.visible:
-            if self._grid[x][y].is_blank():
-                self._reveal_adjacent_blanks(x, y)
-            else:
-                self._grid[x][y].state = tile.State.visible
 
     # checks if the game was won
     def _check_win(self):
@@ -162,11 +219,6 @@ class Game:
 
         return all_visible or all_mines
 
-    # resets the game
-    def reset(self):
-        self._clear()
-        self._first_click = False
-
     def print(self):
         for col in self._grid:
             for element in col:
@@ -176,5 +228,6 @@ class Game:
 
 if __name__ == "__main__":
     g = Game()
+    g.begin()
     g.left_mouse_button(10, 10)
     g.print()
