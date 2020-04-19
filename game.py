@@ -69,6 +69,9 @@ class Game:
         self._size = 10
         self._mines = 10
 
+        # integer keeping track of the number of flags that were placed
+        self._flags = 0
+
         # true if board has been clicked once
         self._first_click = False
 
@@ -89,6 +92,7 @@ class Game:
     def reset(self):
         self._clear()
         self._state = State.beforeStart
+        self._flags = 0
 
     # sets the number of mines in the game if it is a valid game state
     def set_mines(self, m):
@@ -117,6 +121,10 @@ class Game:
         if self._state != State.ongoing:
             return
 
+        # do nothing if the tile is not a covered tile
+        if self._grid[x][y].state is not tile.State.covered:
+            return
+
         if not self._first_click:
             self._populate(x, y)
             self._update_all_tiles()
@@ -130,7 +138,7 @@ class Game:
             if self._check_win():
                 self._state = State.victory
 
-        elif self._grid[x][y].state != tile.State.visible:
+        else:
             if self._grid[x][y].is_blank():
                 self._reveal_adjacent_blanks(x, y)
 
@@ -144,6 +152,27 @@ class Game:
                 elif self._check_win():
                     self._state = State.victory
 
+    # cycles the state of a covered tile
+    def right_mouse_button(self, x, y):
+        if x < 0 or y < 0 or x >= self._size or y >= self._size:
+            raise TilePositionError("Access to Tile out of range", self._size, (x, y))
+
+        if self._state != State.ongoing:
+            return
+
+        # do nothing to visible tiles
+        if self._grid[x][y].state is tile.State.visible:
+            return
+
+        if self._grid[x][y].state is tile.State.covered:
+            self._grid[x][y].state = tile.State.flag
+            self._flags += 1
+        elif self._grid[x][y].state is tile.State.flag:
+            self._grid[x][y].state = tile.State.unknown
+            self._flags -= 1
+        elif self._grid[x][y].state is tile.State.unknown:
+            self._grid[x][y].state = tile.State.covered
+
     # clear the grid
     def _clear(self):
         for col in self._grid:
@@ -151,11 +180,9 @@ class Game:
                 element.set_value(tile.BLANK)
                 element.state = tile.State.covered
 
-    # Clear the grid and populate it with mines
+    # populates the grid with mines
     # Does not generate mines on init x and y
     def _populate(self, init_x, init_y):
-        self._clear()
-
         mines = self._mines
 
         if mines >= self._size * self._size:
@@ -201,15 +228,19 @@ class Game:
             for y in range(self._size):
                 self._update_tile_value(x, y)
 
-    # reveals all blanks that are connected to this tile including itself
-    # also reveals surrounding tiles
+    # reveals all blanks starting from this tile
+    # also reveals tiles surrounding blanks
     def _reveal_adjacent_blanks(self, x, y):
         blanks = []
         if self._grid[x][y].is_blank():
             blanks.append((x, y))
 
-        while (len(blanks) > 0):
+        while len(blanks) > 0:
             x_pos, y_pos = blanks.pop()
+
+            # if this was a flag reduce the fag count
+            if self._grid[x_pos][y_pos].state is tile.State.flag:
+                self._flags -= 1
 
             # set this blank to visible
             self._grid[x_pos][y_pos].state = tile.State.visible
@@ -217,10 +248,14 @@ class Game:
             for i in range(x_pos - 1, x_pos + 2):
                 for j in range(y_pos - 1, y_pos + 2):
                     if 0 <= i < self._size and 0 <= j < self._size:
-                        if self._grid[i][j].is_blank() and self._grid[i][j].state != tile.State.visible:
+                        if self._grid[i][j].is_blank() and self._grid[i][j].state is not tile.State.visible:
                             # add all non-visible blanks to the list
                             blanks.append((i, j))
                         else:
+                            # if this was a flag reduce the fag count
+                            if self._grid[x_pos][y_pos].state is tile.State.flag:
+                                self._flags -= 1
+
                             # make all non-blank adjacent tiles visible
                             self._grid[i][j].state = tile.State.visible
 
@@ -248,5 +283,8 @@ class Game:
 if __name__ == "__main__":
     g = Game()
     g.begin()
-    g.left_mouse_button(4, 4)
+    g.right_mouse_button(4, 4)
+    print(g._flags)
+    g.left_mouse_button(3, 4)
+    print(g._flags)
     g.print()
