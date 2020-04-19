@@ -19,10 +19,18 @@ class MineError(Error):
 
     Attributes:
         - message
+        - size - the size of the grid
+        - mines - the number of mines
     """
 
-    def __init__(self, message):
+    def __init__(self, message, size, mines):
         self.message = message
+        self.size = size
+        self.mines = mines
+
+    def __str__(self):
+        return self.message + ". The grid has " + str(self.size * self.size) + " tiles and " + str(
+            self.mines) + " mines"
 
 
 class TilePositionError(Error):
@@ -30,10 +38,17 @@ class TilePositionError(Error):
 
     Attributes:
         - message
+        - size - the size of the grid
+        - position - pair that holds coordinates to the attempted access
     """
 
-    def __init__(self, message):
+    def __init__(self, message, size, position):
         self.message = message
+        self.size = size
+        self.position = position
+
+    def __str__(self):
+        return self.message + ". Attempted access at " + str(self.position) + ", width of grid is " + str(self.size)
 
 
 # this enum describes the state of the game
@@ -51,8 +66,8 @@ class Game:
         self._state = State.beforeStart
 
         # integers describing the size and format of the game
-        self._size = 20
-        self._mines = 40
+        self._size = 10
+        self._mines = 10
 
         # true if board has been clicked once
         self._first_click = False
@@ -97,7 +112,7 @@ class Game:
     # Reveals the tile at the specified x, y coordinate
     def left_mouse_button(self, x, y):
         if x < 0 or y < 0 or x >= self._size or y >= self._size:
-            raise TilePositionError("Access to Tile out of range [" + str(x) + "][" + str(y) + "]")
+            raise TilePositionError("Access to Tile out of range", self._size, (x, y))
 
         if self._state != State.ongoing:
             return
@@ -107,10 +122,14 @@ class Game:
             self._update_all_tiles()
             self._first_click = True
 
-            self._reveal_adjacent_blanks(x, y)
+            if self._grid[x][y].is_blank():
+                self._reveal_adjacent_blanks(x, y)
+            else:
+                self._grid[x][y].state = tile.State.visible
 
             if self._check_win():
                 self._state = State.victory
+
         elif self._grid[x][y].state != tile.State.visible:
             if self._grid[x][y].is_blank():
                 self._reveal_adjacent_blanks(x, y)
@@ -133,14 +152,14 @@ class Game:
                 element.state = tile.State.covered
 
     # Clear the grid and populate it with mines
-    # Does not generate mines in a 1 tile radius of init x and y
+    # Does not generate mines on init x and y
     def _populate(self, init_x, init_y):
         self._clear()
 
         mines = self._mines
 
-        if mines > self._size * self._size - 9:
-            raise MineError("Too many mines for this size of board")
+        if mines >= self._size * self._size:
+            raise MineError("Too many mines for this size of board", self._size, self._mines)
 
         random.seed()
 
@@ -152,8 +171,8 @@ class Game:
             if self._grid[x][y].is_mine():
                 continue
 
-            # if this tile is within 1 tile radius of the initial position do not place a mine
-            if init_x - 1 <= x <= init_x + 1 or init_y - 1 <= y <= init_y + 1:
+            # if this tile is the initial position do not place a mine
+            if x == init_x and y == init_y:
                 continue
 
             self._grid[x][y].set_value(tile.MINE)
@@ -162,7 +181,7 @@ class Game:
     # update what number a given tile should display
     def _update_tile_value(self, x, y):
         if x < 0 or y < 0 or x >= self._size or y >= self._size:
-            raise TilePositionError("Access to Tile out of range [" + str(x) + "][" + str(y) + "]")
+            raise TilePositionError("Access to Tile out of range", self._size, (x, y))
 
         if self._grid[x][y].is_mine():
             return
@@ -229,5 +248,5 @@ class Game:
 if __name__ == "__main__":
     g = Game()
     g.begin()
-    g.left_mouse_button(10, 10)
+    g.left_mouse_button(4, 4)
     g.print()
