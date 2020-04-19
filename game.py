@@ -117,13 +117,6 @@ class Game:
     def game_done(self) -> bool:
         return self._state is State.victory or self._state is State.loss
 
-    # reveals the mines when the game is lost
-    def _reveal_mines(self):
-        if self._state is State.loss:
-            for col in self._grid:
-                for element in col:
-                    element.state = tile.State.visible
-
     # sets the number of mines in the game if it is a valid game state
     def set_mines(self, m: int):
         if m <= 0:
@@ -192,6 +185,7 @@ class Game:
 
             if self._check_win():
                 self._state = State.victory
+                self._flag_mines()
 
         else:
             if self._grid[x][y].is_blank():
@@ -199,6 +193,7 @@ class Game:
 
                 if self._check_win():
                     self._state = State.victory
+                    self._flag_mines()
             else:
                 self._grid[x][y].state = tile.State.visible
 
@@ -207,6 +202,7 @@ class Game:
                     self._reveal_mines()
                 elif self._check_win():
                     self._state = State.victory
+                    self._flag_mines()
 
     # cycles the state of a covered tile
     def right_mouse_button(self, x: int, y: int):
@@ -332,6 +328,24 @@ class Game:
                     all_visible = False
 
         return all_visible or all_mines
+
+    # reveals the mines when the game is lost
+    def _reveal_mines(self):
+        if self._state is State.loss:
+            for col in self._grid:
+                for element in col:
+                    if element.is_mine():
+                        element.state = tile.State.visible
+
+    # flags the mines when the game is won
+    def _flag_mines(self):
+        if self._state is State.victory:
+            for col in self._grid:
+                for element in col:
+                    if element.is_mine():
+                        element.state = tile.State.flag
+
+            self._flags = self._mines
 
     def print(self):
         for y in range(len(self._grid[0])):
