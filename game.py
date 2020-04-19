@@ -6,9 +6,26 @@ import random
 import tile
 
 
+class Error(Exception):
+    """
+    Base class for exceptions in this game
+    """
+    pass
+
+
+class MineError(Error):
+    """Exception raised when number of mines is invalid
+
+    Attributes:
+        - message
+    """
+
+    def __init__(self, message):
+        self.message = message
+
+
 # This class controls the mines game
 class Game:
-
     SIZE = 20
     MINES = 40
 
@@ -29,10 +46,14 @@ class Game:
                 element.is_mine = False
 
     # Clear the grid and populate it with mines
-    def _populate(self):
+    # Does not generate mines in a 1 tile radius of init x and y
+    def _populate(self, init_x, init_y):
         self._clear()
 
         mines = Game.MINES
+
+        if mines > Game.SIZE * Game.SIZE - 9:
+            raise MineError("Too many mines for this size of board")
 
         random.seed()
 
@@ -97,7 +118,7 @@ class Game:
 
     # runs the game
     def run(self):
-        self._populate()
+        self._populate(0, 0)
 
         for x in range(Game.SIZE):
             for y in range(Game.SIZE):
