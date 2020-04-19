@@ -109,6 +109,13 @@ class Game:
     def game_done(self) -> bool:
         return self._state is State.victory or self._state is State.loss
 
+    # reveals the mines when the game is lost
+    def reveal_mines(self):
+        if self._state is State.loss:
+            for col in self._grid:
+                for element in col:
+                    element.state = tile.State.visible
+
     # sets the number of mines in the game if it is a valid game state
     def set_mines(self, m: int):
         if self._state is not State.ongoing:
@@ -383,3 +390,7 @@ if __name__ == "__main__":
             except TilePositionError as err:
                 print(err)
                 print("Please enter a valid expression")
+
+    # final print of the grid
+    g.reveal_mines()
+    g.print()
