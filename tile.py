@@ -2,6 +2,18 @@
 # Created by: Matthew Lourenco
 # This file is a class for a tile in the mines game
 
+"""
+Defines Tile class and constants that are used to simulate a tile in a mines game
+
+Constants:
+    * tile.BLANK = 0
+    * tile.MINE = -1
+
+Public objects:
+    * Enum tile.State
+    * Class tile.Tile
+"""
+
 from enum import Enum, auto
 
 BLANK = 0
@@ -13,8 +25,16 @@ _MINE_CHAR = '\u2737'
 MINE = -1
 
 
-# this enum describes the state of the tile
 class State(Enum):
+    """
+This enum describes the state of the tile
+
+Constants:
+ * covered
+ * flag
+ * unknown
+ * visible
+    """
     covered = auto()
     flag = auto()
     unknown = auto()
@@ -22,6 +42,14 @@ class State(Enum):
 
 
 class Tile:
+    """
+defines a Tile in a game of mines
+
+self.is_blank(self) -> bool:     returns true if this tile has no number or mine
+self.is_mine(self) -> bool:      returns true if this tile is a mine
+self.get_value(self) -> int:     returns the value of the tile (1-8), (-1 for mine), (0 for blank)
+self.set_value(self, v: int):    sets the value of the tile. Raises Exception if the tile value is not valid
+    """
 
     def __init__(self):
         self._value = BLANK
@@ -37,7 +65,10 @@ class Tile:
         return self._value
 
     def set_value(self, v: int):
-        self._value = v
+        if -1 <= v <= 8:
+            self._value = v
+        else:
+            raise Exception("Value is not valid: v = " + str(v))
 
     def __str__(self):
         if self.state == State.covered:

@@ -1,6 +1,19 @@
 # Created on 10 Mar 2020
 # Created by: Matthew Lourenco
-# This file plays the mines game
+# This file plays the mines game on the console
+
+"""
+Defines the Game class that controls a game of mines
+
+Public objects:
+    Enum game.State
+    Class game.Game
+
+Exceptions:
+    * game.SizeError
+    * game.MineError
+    * game.TilePositionError
+"""
 
 import random
 import tile
@@ -67,16 +80,44 @@ class TilePositionError(Error):
         return self.message + ". Attempted access at " + str(self.position) + ", width of grid is " + str(self.size)
 
 
-# this enum describes the state of the game
 class State(Enum):
+    """
+This enum describes the state of the game
+
+Constants:
+ * beforeStart
+ * ongoing
+ * loss
+ * victory
+    """
     beforeStart = auto()
     ongoing = auto()
     loss = auto()
     victory = auto()
 
 
-# This class controls the mines game
 class Game:
+    """
+This class controls the mines game
+
+self.begin(self): begins the game if the current state is beforeStart
+
+self.reset(self): resets the game to the state immediately after constructor is called
+
+self.game_done(self) -> bool: returns true if game is done
+
+self.set_mines(self, m: int): if game is not ongoing set the number of mines in the game
+
+self.set_size(self, s: int): if the game is not ongoing sets the size of the grid and calls self.reset()
+
+self.get_tile_value(self, x: int, y: int) -> int: returns the tile value at the given position if the tile is visible
+
+self.get_tile_state(self, x: int, y: int) -> tile.State: returns the state of a tile at a given position
+
+self.left_mouse_button(self, x: int, y: int): reveals the tile at the given position
+
+self.right_mouse_button(self, x: int, y: int): cycles the state of a covered tile
+    """
     def __init__(self):
         # state variable that keeps track of the game
         self._state = State.beforeStart
