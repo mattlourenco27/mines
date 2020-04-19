@@ -8,6 +8,7 @@ BLANK = '\u25A1'
 COVERED = '\u25A8'
 FLAG = '\u2690'
 UNKNOWN = '?'
+MINE = '*'
 
 class State(Enum):
     covered = 0
@@ -19,6 +20,23 @@ class State(Enum):
 class Tile:
 
     def __init__(self):
-        self.character = '_'
+        self.value = 0
         self.state = State.covered
         self.is_mine = False
+
+    def __str__(self):
+        if self.state == State.covered:
+            return COVERED
+        elif self.state == State.visible:
+            if self.is_mine:
+                return MINE
+            if self.value == 0:
+                return BLANK
+            if self.value < 9 and self.value > 0:
+                return str(self.value)
+            else:
+                raise Exception("Tile value is not valid")
+        elif self.state == State.flag:
+            return FLAG
+        elif self.state == State.unknown:
+            return UNKNOWN

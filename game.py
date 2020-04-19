@@ -41,7 +41,7 @@ class Game:
     def _clear(self):
         for col in self._grid:
             for element in col:
-                element.character = '_'
+                element.value = 0
                 element.state = tile.State.covered
                 element.is_mine = False
 
@@ -65,7 +65,6 @@ class Game:
                 continue
 
             self._grid[x][y].is_mine = True
-            self._grid[x][y].character = '*'
             mines -= 1
 
     # update what number a given tile should display
@@ -80,27 +79,8 @@ class Game:
 
         for i in range(x - 1, x + 2):
             for j in range(y - 1, y + 2):
-                if (i >= 0 and i < Game.SIZE and j >= 0 and j < Game.SIZE and self._grid[i][j].is_mine):
+                if i >= 0 and i < Game.SIZE and j >= 0 and j < Game.SIZE and self._grid[i][j].is_mine:
                     count += 1
-
-        if count == 0:
-            self._grid[x][y].character = tile.BLANK
-        elif count == 1:
-            self._grid[x][y].character = '1'
-        elif count == 2:
-            self._grid[x][y].character = '2'
-        elif count == 3:
-            self._grid[x][y].character = '3'
-        elif count == 4:
-            self._grid[x][y].character = '4'
-        elif count == 5:
-            self._grid[x][y].character = '5'
-        elif count == 6:
-            self._grid[x][y].character = '6'
-        elif count == 7:
-            self._grid[x][y].character = '7'
-        elif count == 8:
-            self._grid[x][y].character = '8'
 
     # checks if the game was won
     def _check_win(self):
@@ -127,18 +107,7 @@ class Game:
     def print(self):
         for col in self._grid:
             for element in col:
-                char = 'A'
-
-                if element.state == tile.State.covered:
-                    char = tile.COVERED
-                elif element.state == tile.State.visible:
-                    char = element.character
-                elif element.state == tile.State.flag:
-                    char = tile.FLAG
-                elif element.state == tile.State.unknown:
-                    char = tile.UNKNOWN
-
-                print(char + ' ', end='')
+                print(str(element) + ' ', end='')
             print()
 
 
