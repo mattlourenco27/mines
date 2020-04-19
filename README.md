@@ -6,4 +6,4 @@ Created by Matthew Lourenco (mattlourenco27) on github using python3
 3. A console version of the mines game will begin
 
 ## GUI version of mines
-#####wip
+### wip
