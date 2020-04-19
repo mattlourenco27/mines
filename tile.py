@@ -9,7 +9,7 @@ _BLANK_CHAR = '\u25A1'
 _COVERED = '\u25A8'
 _FLAG = '\u2690'
 _UNKNOWN = '?'
-_MINE_CHAR = '*'
+_MINE_CHAR = '\u2737'
 MINE = -1
 
 

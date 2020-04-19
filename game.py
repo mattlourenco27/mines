@@ -118,7 +118,7 @@ class Game:
         return self._state is State.victory or self._state is State.loss
 
     # reveals the mines when the game is lost
-    def reveal_mines(self):
+    def _reveal_mines(self):
         if self._state is State.loss:
             for col in self._grid:
                 for element in col:
@@ -204,6 +204,7 @@ class Game:
 
                 if self._grid[x][y].is_mine():
                     self._state = State.loss
+                    self._reveal_mines()
                 elif self._check_win():
                     self._state = State.victory
 
@@ -336,6 +337,9 @@ class Game:
                 print(str(self._grid[x][y]) + ' ', end='')
             print()
 
+        if self._state is State.victory or self._state is State.loss:
+            print(self._state.name)
+
 
 if __name__ == "__main__":
     g = Game()
@@ -401,6 +405,8 @@ if __name__ == "__main__":
                     g.right_mouse_button(x, y)
 
                 break
+            except IndexError:
+                print("Please enter three values separated by spaces")
             except ValueError:
                 print("Please enter valid integers in your expression")
             except TilePositionError as err:
@@ -408,5 +414,4 @@ if __name__ == "__main__":
                 print("Please enter a valid expression")
 
     # final print of the grid
-    g.reveal_mines()
     g.print()
