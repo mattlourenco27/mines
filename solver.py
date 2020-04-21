@@ -5,8 +5,25 @@
 import game
 import tile
 
-_COVERED = -1
-_FLAG = -2
+
+class _AwareTile(tile.Tile):
+    def __init__(self, x: int, y: int, size: int):
+        super().__init__()
+
+        # stores the adjacent tile coordinates
+        self.adjacent: [(int, int)] = []
+
+        # stores the adjacent covered tiles
+        self.covered: [(int, int)] = []
+
+        for i in range(x - 1, x + 2):
+            for j in range(y - 1, y + 2):
+                if 0 <= i < size and 0 <= j < size and not (i == x and j == y):
+                    self.adjacent.append((i, j))
+                    self.covered.append((i, j))
+
+    def is_satisfied(self):
+        return len(self.covered) == 0 and self.state is tile.State.visible
 
 
 class Solver:
@@ -15,7 +32,7 @@ class Solver:
         g.begin()
 
         # grid to store known tile values
-        self._grid: [[int]] = []
+        self._grid: [[_AwareTile]] = []
 
         # size of the board
         self._size = g.get_size()
@@ -23,20 +40,41 @@ class Solver:
         for x in range(self._size):
             self._grid.append([])
             for y in range(self._size):
-                self._grid[x].append(_COVERED)
+                self._grid[x].append(_AwareTile(x, y, self._size))
 
+        # initialize grid tile parameters
         self._update_grid(g)
 
     # update the local state of the tile at the specified position
     def _update_tile(self, g: game.Game, x: int, y: int):
         if g.get_tile_state(x, y) is tile.State.covered:
-            self._grid[x][y] = _COVERED
+            self._grid[x][y].state = tile.State.covered
         elif g.get_tile_state(x, y) is tile.State.flag:
-            self._grid[x][y] = _FLAG
+            self._grid[x][y].state = tile.State.flag
+
+            # remove this tile from adjacent covered lists
+            for element in self._grid[x][y].adjacent:
+                i, j = element
+
+                try:
+                    self._grid[i][j].covered.remove((x, y))
+                except ValueError:
+                    pass
         elif g.get_tile_state(x, y) is tile.State.visible:
-            self._grid[x][y] = g.get_tile_value(x, y)
+            self._grid[x][y].state = tile.State.visible
+            self._grid[x][y].set_value(g.get_tile_value(x, y))
+
+            # remove this tile from adjacent covered lists
+            for element in self._grid[x][y].adjacent:
+                i, j = element
+
+                try:
+                    self._grid[i][j].covered.remove((x, y))
+                except ValueError:
+                    pass
         elif g.get_tile_state(x, y) is tile.State.unknown:
-            raise Exception("Unknown tile encountered at (" + str(x) + ", " + str(y) + ")")
+            g.right_mouse_button(x, y)
+            self._grid[x][y].state = tile.State.covered
 
     # update all of the local tiles
     def _update_grid(self, g: game.Game):
@@ -46,38 +84,36 @@ class Solver:
 
     # do a logical scan of all the tiles on the local grid
     # flag or reveal valid tiles
-    def _do_logic_scan(self, g: game.Game):
-        self._update_grid(g)
+    def _do_logic_scan(self, g: game.Game, update: bool):
+        if update:
+            self._update_grid(g)
 
         for x in range(self._size):
             for y in range(self._size):
-                if self._grid[x][y] > 0:
+                if self._grid[x][y].state is tile.State.visible and not self._grid[x][y].is_satisfied():
 
                     # scan the surrounding tiles
                     flags = 0
-                    covered: [(int, int)] = []
 
-                    for i in range(x - 1, x + 2):
-                        for j in range(y - 1, y + 2):
-                            if 0 <= i < self._size and 0 <= j < self._size and self._grid[i][j] == _FLAG:
-                                flags += 1
-                            if 0 <= i < self._size and 0 <= j < self._size and self._grid[i][j] == _COVERED:
-                                covered.append((i, j))
+                    for element in self._grid[x][y].adjacent:
+                        i, j = element
+                        if self._grid[i][j].state is tile.State.flag:
+                            flags += 1
 
                     # first check if there are enough flags to satisfy the tile value
-                    if flags == self._grid[x][y] and len(covered) > 0:
-                        for element in covered:
+                    if flags == self._grid[x][y].get_value() and len(self._grid[x][y].covered) > 0:
+                        for element in self._grid[x][y].covered:
                             i, j = element
                             g.left_mouse_button(i, j)
                             self._update_tile(g, i, j)
 
                             # if a blank was hit update the whole board
-                            if self._grid[i][j] == 0:
+                            if self._grid[i][j].is_blank():
                                 self._update_grid(g)
 
                     # next check if the number of covered spaces + number of flags is equal to the tile value
-                    elif flags + len(covered) == self._grid[x][y]:
-                        for element in covered:
+                    elif flags + len(self._grid[x][y].covered) == self._grid[x][y].get_value():
+                        for element in self._grid[x][y].covered:
                             i, j = element
                             g.right_mouse_button(i, j)
                             self._update_tile(g, i, j)
@@ -119,6 +155,9 @@ if __name__ == "__main__":
 
     solver = Solver(g)
 
+    # true if the last move was made by a user
+    last_move_user = False
+
     while not g.game_done():
         # print the grid
         g.print()
@@ -127,6 +166,7 @@ if __name__ == "__main__":
         left: bool = True
         x: int
         y: int
+
         while True:
             try:
                 user_in = input("Enter your next move: ")
@@ -137,7 +177,8 @@ if __name__ == "__main__":
                     quit()
 
                 if values[0].upper() == 'SOLVE' and values[1].upper() == 'ONE' and values[2].upper() == 'STEP':
-                    solver._do_logic_scan(g)
+                    solver._do_logic_scan(g, last_move_user)
+                    last_move_user = False
                     break
 
                 if values[0].upper() != 'L' and values[0].upper() != 'R':
@@ -147,6 +188,8 @@ if __name__ == "__main__":
                 left = values[0].upper() == 'L'
                 x = int(values[1])
                 y = int(values[2])
+
+                last_move_user = True
 
                 if left:
                     g.left_mouse_button(x, y)
