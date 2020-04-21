@@ -47,6 +47,8 @@ class Solver:
     # do a logical scan of all the tiles on the local grid
     # flag or reveal valid tiles
     def _do_logic_scan(self, g: game.Game):
+        self._update_grid(g)
+
         for x in range(self._size):
             for y in range(self._size):
                 if self._grid[x][y] > 0:
@@ -82,4 +84,83 @@ class Solver:
 
 
 if __name__ == "__main__":
-    print(game.Game.__doc__)
+    g = game.Game()
+
+    print("Welcome to mines! Created by mattlourenco27 on github")
+
+    # get size and number of mines
+    size: int
+    while True:
+        try:
+            size = int(input("Enter the size of the grid: "))
+            g.set_size(size)
+            g.print()
+            break
+        except ValueError:
+            print("Please enter an integer")
+        except game.SizeError:
+            print("Please enter a grid between 10 and 100 tiles wide")
+
+    mines: int
+    while True:
+        try:
+            mines = int(input("Enter the number of mines on the grid: "))
+            g.set_mines(mines)
+            g.begin()
+            break
+        except ValueError:
+            print("Please enter an integer")
+        except game.MineError as err:
+            print(err)
+            print("Please enter a valid number of mines")
+
+    print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
+    print("Type 'solve one step' to do one logical step over the board")
+
+    solver = Solver(g)
+
+    while not g.game_done():
+        # print the grid
+        g.print()
+
+        # get the next move
+        left: bool = True
+        x: int
+        y: int
+        while True:
+            try:
+                user_in = input("Enter your next move: ")
+                values = user_in.split(' ')
+
+                if values[0].capitalize() == 'Q':
+                    print("Exiting...")
+                    quit()
+
+                if values[0].upper() == 'SOLVE' and values[1].upper() == 'ONE' and values[2].upper() == 'STEP':
+                    solver._do_logic_scan(g)
+                    break
+
+                if values[0].upper() != 'L' and values[0].upper() != 'R':
+                    print("Please enter L or R for 'left' or 'right' click")
+                    continue
+
+                left = values[0].upper() == 'L'
+                x = int(values[1])
+                y = int(values[2])
+
+                if left:
+                    g.left_mouse_button(x, y)
+                else:
+                    g.right_mouse_button(x, y)
+
+                break
+            except IndexError:
+                print("Please enter three values separated by spaces")
+            except ValueError:
+                print("Please enter valid integers in your expression")
+            except game.TilePositionError as err:
+                print(err)
+                print("Please enter a valid expression")
+
+    # final print of the grid
+    g.print()

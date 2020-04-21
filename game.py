@@ -377,16 +377,13 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
     # checks if the game was won
     def _check_win(self) -> bool:
         all_visible = True
-        all_mines = True
 
         for col in self._grid:
             for element in col:
-                if element.is_mine() and element.state != tile.State.flag:
-                    all_mines = False
-                elif not element.is_mine() and element.state != tile.State.visible:
+                if not element.is_mine() and element.state != tile.State.visible:
                     all_visible = False
 
-        return all_visible or all_mines
+        return all_visible
 
     # reveals the mines when the game is lost
     def _reveal_mines(self):
