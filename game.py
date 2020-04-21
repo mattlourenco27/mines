@@ -6,8 +6,8 @@
 Defines the Game class that controls a game of mines
 
 Public objects:
-    Enum game.State
-    Class game.Game
+    * Enum game.State
+    * Class game.Game
 
 Exceptions:
     * game.SizeError
@@ -106,6 +106,12 @@ self.reset(self): resets the game to the state immediately after constructor is 
 
 self.game_done(self) -> bool: returns true if game is done
 
+self.get_size(self) -> int: returns the size of the board
+
+self.get_mines(self) -> int: returns the number of mines
+
+self.get_flags(self) -> int: returns the number of flags placed
+
 self.set_mines(self, m: int): if game is not ongoing set the number of mines in the game
 
 self.set_size(self, s: int): if the game is not ongoing sets the size of the grid and calls self.reset()
@@ -157,6 +163,18 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
     # returns true if the game is done
     def game_done(self) -> bool:
         return self._state is State.victory or self._state is State.loss
+
+    # returns the size of the board
+    def get_size(self) -> int:
+        return self._size
+
+    # returns the number of mines
+    def get_mines(self) -> int:
+        return self._mines
+
+    # returns the number of flags placed
+    def get_flags(self) -> int:
+        return self._flags
 
     # sets the number of mines in the game if it is a valid game state
     def set_mines(self, m: int):
