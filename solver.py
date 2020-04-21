@@ -6,6 +6,17 @@ import game
 import tile
 
 
+class GameObjectError(game.Error):
+    """Exception raised when the object passed is not the same as the one used to initialize the solver
+
+        Attributes:
+            - message
+        """
+
+    def __init__(self, message):
+        self.message = message
+
+
 class _AwareTile(tile.Tile):
     def __init__(self, x: int, y: int, size: int):
         super().__init__()
@@ -31,6 +42,8 @@ class Solver:
         # begin the game if it was not already begun
         g.begin()
 
+        self._gameID = id(g)
+
         # grid to store known tile values
         self._grid: [[_AwareTile]] = []
 
@@ -45,7 +58,17 @@ class Solver:
         # initialize grid tile parameters
         self._update_grid(g)
 
+    def _consistent_game_check(func):
+        def function_wrapper(self, g: game.Game, *args, **kwargs):
+            if id(g) != self._gameID:
+                raise GameObjectError("The entered game object is not the same as the original")
+
+            return func(self, g, *args, **kwargs)
+
+        return function_wrapper
+
     # update the local state of the tile at the specified position
+    @_consistent_game_check
     def _update_tile(self, g: game.Game, x: int, y: int):
         if g.get_tile_state(x, y) is tile.State.covered:
             self._grid[x][y].state = tile.State.covered
@@ -77,16 +100,21 @@ class Solver:
             self._grid[x][y].state = tile.State.covered
 
     # update all of the local tiles
+    @_consistent_game_check
     def _update_grid(self, g: game.Game):
         for x in range(self._size):
             for y in range(self._size):
                 self._update_tile(g, x, y)
 
     # do a logical scan of all the tiles on the local grid
-    # flag or reveal valid tiles
-    def _do_logic_scan(self, g: game.Game, update: bool):
+    # updates the local board first if update is true. flags or reveals valid tiles
+    # returns true if it made a change to the grid tiles
+    @_consistent_game_check
+    def _do_logic_scan(self, g: game.Game, update: bool) -> bool:
         if update:
             self._update_grid(g)
+
+        did_action = False
 
         for x in range(self._size):
             for y in range(self._size):
@@ -102,6 +130,7 @@ class Solver:
 
                     # first check if there are enough flags to satisfy the tile value
                     if flags == self._grid[x][y].get_value() and len(self._grid[x][y].covered) > 0:
+                        did_action = True
                         for element in self._grid[x][y].covered:
                             i, j = element
                             g.left_mouse_button(i, j)
@@ -113,10 +142,27 @@ class Solver:
 
                     # next check if the number of covered spaces + number of flags is equal to the tile value
                     elif flags + len(self._grid[x][y].covered) == self._grid[x][y].get_value():
+                        did_action = True
                         for element in self._grid[x][y].covered:
                             i, j = element
                             g.right_mouse_button(i, j)
                             self._update_tile(g, i, j)
+
+        return did_action
+
+    # use probability to determine which tiles are safe to reveal or flag
+    @_consistent_game_check
+    def _do_prob_scan(self, g: game.Game, update: bool):
+        if update:
+            self._update_grid()
+
+        # duplicate a representation of the current grid
+
+        # generate all valid grids
+
+        # update probabilities
+
+        # click 0% and flag 100%
 
 
 if __name__ == "__main__":
