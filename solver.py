@@ -55,6 +55,40 @@ def _consistent_game_check(func):
     return function_wrapper
 
 
+# given the number of true items in a list and the length of the list,
+# this function generates every possible arrangement of true and false items
+def _permute(items: int, length: int) -> [[bool]]:
+    # template for possible solutions
+    solutions = collections.deque([[]])
+    for _ in range(length):
+        solutions[0].append(False)
+
+    num_templates: int = 1
+
+    # add a new true element once in each loop
+    for next_true_element in range(items):
+        # generate more template solutions with one more true element
+        for solution in range(num_templates):
+            temp = solutions.popleft()
+
+            # find the last true element in this temp list
+            final_true: int = -1
+            for i in range(length - 1, -1, -1): # scan the list in reverse
+                if temp[i]:
+                    final_true = i
+                    break
+
+            for position in range(final_true + 1, length):
+                temp[position] = True
+                solutions.append(deepcopy(temp))
+                temp[position] = False
+
+        # update the number of templates to iterate over next loop
+        num_templates = len(solutions)
+
+    return solutions
+
+
 class Solver:
     def __init__(self, g: game.Game):
         # begin the game if it was not already begun
@@ -441,6 +475,8 @@ class Solver:
 
 
 if __name__ == "__main__":
+    _permute(4, 5)
+
     g = game.Game()
 
     print("Welcome to mines! Created by mattlourenco27 on github")
