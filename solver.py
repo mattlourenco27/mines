@@ -23,6 +23,9 @@ class _AwareTile(tile.Tile):
     def __init__(self, x: int, y: int, size: int):
         super().__init__()
 
+        # stores the number of flags that surround the tile
+        self.flags: int = 0
+
         # stores the adjacent tile coordinates
         self.adjacent: [(int, int)] = []
 
@@ -97,9 +100,13 @@ class Solver:
             self._grid[x][y].state = tile.State.visible
             self._grid[x][y].set_value(g.get_tile_value(x, y))
 
+            self._grid[x][y].flags = 0
             # remove this tile from adjacent covered lists
             for element in self._grid[x][y].adjacent:
                 i, j = element
+
+                if self._grid[i][j].state is tile.State.flag:
+                    self._grid[x][y].flags += 1
 
                 try:
                     self._grid[i][j].covered.remove((x, y))
@@ -288,27 +295,55 @@ class Solver:
 
         return did_action
 
-    '''
-    # returns true if the tile has a valid number of mines around it
-    def _valid_tile(self, grid: [[int]], x: int, y: int, mine: int) -> bool:
-        value = grid[x][y]
+    # do a single placement of a flag or reveal of a covered tile using probability
+    # takes a hint of where to start the search
+    # returns true if it was able to make a change to the board
+    @_consistent_game_check
+    def _do_prob_placement(self, g: game.Game, hint: (int, int)) -> bool:
+        self._reset_visited()
+        wavefront = collections.deque([hint])
+
+        while len(wavefront) > 0:
+            x, y = wavefront.popleft()
+
+            if self._grid[x][y].state is tile.State.visible and not self._grid[x][y].is_satisfied():
+                pass
+
+            for i in range(x - 1, x + 2):
+                for j in range(y - 1, y + 2):
+                    if 0 <= i < self._size and 0 <= j < self._size:
+                        if not self._grid[i][j].visited:
+                            wavefront.append((i, j))
+                            self._visited_tiles.append((i, j))
+                            self._grid[i][j].visited = True
+
+        return False
+
+    # returns true if the tile has a valid number of flags around it
+    def _valid_tile(self, x: int, y: int) -> bool:
+        value = self._grid[x][y].get_value()
 
         for item in self._grid[x][y].adjacent:
             i, j = item
-            if grid[i][j] == mine:
+            if self._grid[i][j].state is tile.State.flag:
                 value -= 1
 
         return value == 0
 
-    # returns true if the passed grid representation is valid
-    def _valid_grid(self, grid: [[int]], mine: int) -> bool:
-        for x in range(len(grid)):
-            for y in range(len(grid)):
-                if grid[x][y] > 0:
-                    if not self._valid_tile(grid, x, y, mine):
-                        return False
-        return True
+    # returns true if all visible tiles are valid and all flags are placed
+    @_consistent_game_check
+    def _valid_grid(self, g: game.Game) -> bool:
+        flags: int = 0
 
+        for x in range(self._size):
+            for y in range(self._size):
+                if self._grid[x][y].state is tile.State.flag:
+                    flags += 1
+                elif self._grid[x][y].state is tile.State.visible and not self._valid_tile(x, y):
+                    return False
+
+        return flags == g.get_mines()
+    '''
     # use probability to determine which tiles are safe to reveal or flag
     @_consistent_game_check
     def _do_prob_scan(self, g: game.Game, update: bool):
