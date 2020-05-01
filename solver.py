@@ -45,6 +45,26 @@ class _AwareTile(tile.Tile):
         return len(self.covered) == 0 and self.state is tile.State.visible
 
 
+class _Block:
+    # counter that ensures that block ids are never the same
+    num_ids = 0
+
+    def __init__(self, mines: int, tiles: [(int, int)] = []):
+        # maximum number of mines in this block of tiles
+        self.max_mines = mines
+
+        # minimum number of mines in this block of tiles
+        self.min_mines = mines
+
+        # list of tile positions
+        self.tiles = tiles
+
+        # id of this instance of a block
+        self.id = _Block.num_ids
+
+        _Block.num_ids += 1
+
+
 def _consistent_game_check(func):
     def function_wrapper(self, g: game.Game, *args, **kwargs):
         if id(g) != self._gameID:
@@ -377,86 +397,6 @@ class Solver:
                     return False
 
         return flags == g.get_mines()
-    '''
-    # use probability to determine which tiles are safe to reveal or flag
-    @_consistent_game_check
-    def _do_prob_scan(self, g: game.Game, update: bool):
-        if update:
-            self._update_grid()
-
-        COVERED = -1
-        FLAG = -2
-        MINE = -3
-
-        remaining_mines = g.get_mines() - g.get_flags()
-
-        if remaining_mines < 0:
-            raise Exception("More flags were placed than mines")
-
-        # duplicate a representation of the current grid
-        original: [[int]] = []
-
-        # list of all tiles that are dependant on this mine
-        # Ex: tiles that are dependant on mine (0,0) -> mines[0][0]
-        mines: [[[(int, int)]]] = []
-        for x in range(self._size):
-            original.append([])
-            mines.append([])
-            for y in range(self._size):
-                mines[x].append([])
-                if self._grid[x][y].state is tile.State.covered:
-                    original[x].append(COVERED)
-                elif self._grid[x][y].state is tile.State.visible:
-                    original[x].append(self._grid[x][y].get_value())
-                elif self._grid[x][y].state is tile.State.flag:
-                    original[x].append(FLAG)
-                else:
-                    g.right_mouse_button(x, y)
-                    original[x].append(COVERED)
-
-        # update the number of flags around each tile
-        for x in range(self._size):
-            for y in range(self._size):
-                if original[x][y] == FLAG:
-                    for item in self._grid[x][y].adjacent:
-                        i, j = item
-                        original[i][j] -= 1
-
-                        if original[i][j] < 0:
-                            raise Exception("Too many flags around tile (" + str(i) + ", " + str(j) + ")")
-                elif original[x][y] > 0:
-                    for item in self._grid[x][y].covered:
-                        i, j = item
-                        mines[i][j].append((x, y))
-
-        # generate all valid grids
-        # place all mines around values
-        # check if all values are satisfied
-        # add this generation to the possibilities
-        test_grid: [[int]] = deepcopy(original)
-        test_mines: [[[(int, int)]]] = deepcopy(mines)
-        mines_used = 0
-
-        past_positions: [(int, int)] = []
-
-        x = 0
-        while x < len(mines):
-            y = 0
-            while y < len(mines[x]):
-                if len(mines[x][y]) > 0:
-                    past_positions.append((x, y))
-
-                    # try setting this mine and see if any number tiles are over capacity
-                    # if tiles can still take more, move to next mine
-                    # otherwise backtrack
-
-                y += 1
-            x += 1
-
-        # update probabilities
-
-        # click 0% and flag 100%
-    '''
 
     def print(self):
         print('  ', end='')
@@ -475,8 +415,6 @@ class Solver:
 
 
 if __name__ == "__main__":
-    _permute(4, 5)
-
     g = game.Game()
 
     print("Welcome to mines! Created by mattlourenco27 on github")
