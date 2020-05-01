@@ -19,6 +19,22 @@ class GameObjectError(game.Error):
         self.message = message
 
 
+class BlockGenerationError(game.Error):
+    """Exception raised when a given tile does not meet the requirements to generate a block
+
+        Attributes:
+            - message
+            - tile position
+        """
+
+    def __init__(self, message, tile_position: (int, int)):
+        self.message = message
+        self.tile_position = tile_position
+
+    def __str__(self):
+        return self.message + ". Tile: " + str(self.tile_position)
+
+
 class _AwareTile(tile.Tile):
     def __init__(self, x: int, y: int, size: int):
         super().__init__()
@@ -365,7 +381,7 @@ class Solver:
             x, y = wavefront.popleft()
 
             if self._grid[x][y].state is tile.State.visible and not self._grid[x][y].is_satisfied():
-                pass
+                break
 
             for i in range(x - 1, x + 2):
                 for j in range(y - 1, y + 2):
@@ -376,6 +392,24 @@ class Solver:
                             self._grid[i][j].visited = True
 
         return False
+
+    # generates a block at a given visible, non-satisfied tile
+    def _gen_block_at_tile(self, tile_position: (int, int)) -> _Block:
+        x, y = tile_position
+        if self._grid[x][y].state is not tile.State.visible or self._grid[x][y].is_satisfied:
+            raise BlockGenerationError("Given tile is not a valid candidate to generate a block", tile_position)
+
+        # number of mines in this block
+        mines: int = self._grid[x][y].get_value() - self._grid[x][y].flags
+
+        new_block: _Block = _Block(mines, deepcopy(self._grid[x][y].covered))
+
+        # update the child tiles
+        for element in self._grid[x][y].covered:
+            i, j = element
+            self._grid[i][j].parent_ids.append(new_block.id)
+
+        return new_block
 
     # returns true if the tile has a valid number of flags around it
     def _valid_tile(self, x: int, y: int) -> bool:
