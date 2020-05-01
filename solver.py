@@ -32,6 +32,9 @@ class _AwareTile(tile.Tile):
         # stores the adjacent covered tiles
         self.covered: [(int, int)] = []
 
+        # ids of all parent blocks
+        self.parent_ids: [int] = []
+
         # true if this tile has been visited in a scan. volatile
         self.visited = False
 
@@ -47,24 +50,25 @@ class _AwareTile(tile.Tile):
 
 class _Block:
     # counter that ensures that block ids are never the same
-    num_ids = 0
+    num_ids: int = 0
 
     def __init__(self, mines: int, tiles: [(int, int)] = []):
         # maximum number of mines in this block of tiles
-        self.max_mines = mines
+        self.max_mines: int = mines
 
         # minimum number of mines in this block of tiles
-        self.min_mines = mines
+        self.min_mines: int = mines
 
         # list of tile positions
-        self.tiles = tiles
+        self.tiles: [(int, int)] = tiles
 
         # id of this instance of a block
-        self.id = _Block.num_ids
+        self.id: int = _Block.num_ids
 
         _Block.num_ids += 1
 
 
+# wrapper that raises an exception if the game used in the solver is inconsistent
 def _consistent_game_check(func):
     def function_wrapper(self, g: game.Game, *args, **kwargs):
         if id(g) != self._gameID:
