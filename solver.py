@@ -69,11 +69,8 @@ class _Block:
     num_ids: int = 0
 
     def __init__(self, mines: int, tiles: [(int, int)] = []):
-        # maximum number of mines in this block of tiles
-        self.max_mines: int = mines
-
-        # minimum number of mines in this block of tiles
-        self.min_mines: int = mines
+        # the exact number of mines in this block of tiles
+        self.mines: int = mines
 
         # list of tile positions
         self.tiles: [(int, int)] = tiles
@@ -97,13 +94,20 @@ def _consistent_game_check(func):
 
 # given the number of true items in a list and the length of the list,
 # this function generates every possible arrangement of true and false items
-def _permute(items: int, length: int) -> [[bool]]:
+def _permute(items: int, length: int):
     # template for possible solutions
     solutions = collections.deque([[]])
     for _ in range(length):
         solutions[0].append(False)
 
     num_templates: int = 1
+
+    # return full list of True
+    if items >= length:
+        for _ in range(length):
+            solutions[0] = True
+
+        return solutions
 
     # add a new true element once in each loop
     for next_true_element in range(items):
@@ -381,7 +385,7 @@ class Solver:
             x, y = wavefront.popleft()
 
             if self._grid[x][y].state is tile.State.visible and not self._grid[x][y].is_satisfied():
-                break
+                return self._prob_placement_helper(g, x, y)
 
             for i in range(x - 1, x + 2):
                 for j in range(y - 1, y + 2):
@@ -392,6 +396,124 @@ class Solver:
                             self._grid[i][j].visited = True
 
         return False
+
+    # helper functions for the _do_prob_placement function
+    # returns true upon success of placing a flag or uncovering a tile
+    def _prob_placement_helper(self, g: game.Game, x: int, y: int) -> bool:
+        # generate the main block of this analysis
+        main_block: _Block = self._gen_block_at_tile((x, y))
+
+        # find all adjacent non_satisfied, visible tiles
+        adjacent_tiles: [(int, int)] = []
+        for covered_tile in main_block.tiles:
+            i, j = covered_tile
+            for tile_element in self._grid[i][j].adjacent:
+                m, n = tile_element
+
+                if self._grid[m][n].state is tile.State.visible and not self._grid[m][n].is_satisfied() and not tile_element in adjacent_tiles:
+                    adjacent_tiles.append(tile_element)
+
+        # generate a block for each of these tiles
+        all_blocks: [_Block] = [main_block]
+        max_mines: int = main_block.mines # the maximum number of mines in these blocks
+        for working_tile in adjacent_tiles:
+            new_block: _Block = self._gen_block_at_tile(working_tile)
+            all_blocks.append(new_block)
+            max_mines += new_block.mines
+
+        # count the number of tiles that are in blocks
+        all_tiles: [(int, int)] = []
+        for block in all_blocks:
+            for tile in block.tiles:
+                if not tile in all_tiles:
+                    all_tiles.append(tile)
+
+        # the number of mines cannot be greater than the number of tiles in blocks
+        max_mines = min(len(all_tiles), max_mines)
+
+        # iterate to generate every possible placement of mines
+        solutions = collections.deque([[]])
+
+        while max_mines > 0:
+            # start with max_mines and generate possible solutions, decreasing max_mines until it hits zero
+
+            possibilities = collections.deque(_permute(max_mines, len(all_tiles)))
+
+            # check every possibility
+            for arrangement in possibilities:
+
+                # place flags at true markers
+                for item in range(len(arrangement)):
+                    if arrangement[item]:
+                        i, j = all_tiles[item]
+                        self._grid[i][j].state = tile.State.flag
+
+                # check for validity of adjacent tiles
+                all_valid = True
+                for item in range(len(adjacent_tiles)):
+                    i, j = adjacent_tiles[item]
+                    if not self._valid_tile(i, j):
+                        all_valid = False
+                        break
+
+                if all_valid:
+                    solutions.append(arrangement)
+
+                # reset placed flags
+                for item in range(len(arrangement)):
+                    if arrangement[item]:
+                        i, j = all_tiles[item]
+                        self._grid[i][j].state = tile.State.covered
+
+            max_mines -= 1
+
+        # check solutions against the entire grid, saving the data from the valid ones
+        data: [float] = []
+        num_valid_soln: int = 0
+        for _ in range(len(all_tiles)):
+            # initialization of data list
+            data.append(0)
+        for arrangement in solutions:
+
+            # place flags at true markers
+            for item in range(len(arrangement)):
+                if arrangement[item]:
+                    i, j = all_tiles[item]
+                    self._grid[i][j].state = tile.State.flag
+
+            # check for validity of entire board
+            valid = self._valid_grid()
+
+            if valid:
+                num_valid_soln += 1
+                for item in range(len(all_tiles)):
+                    data[item] += 1
+
+            # reset placed flags
+            for item in range(len(arrangement)):
+                if arrangement[item]:
+                    i, j = all_tiles[item]
+                    self._grid[i][j].state = tile.State.covered
+
+        if num_valid_soln == 0:
+            self._clean_blocks(all_blocks)
+            return False
+
+        did_action: bool = False
+        for item in range(len(data)):
+            if data[item] == num_valid_soln:
+                # flag tiles that are always mines
+                did_action = True
+                i, j = all_tiles[item]
+                g.right_mouse_button(i, j)
+            elif data[item] == 0:
+                # click tiles that are never mines
+                did_action = True
+                i, j = all_tiles[item]
+                g.left_mouse_button(i, j)
+
+        self._clean_blocks(all_blocks)
+        return did_action
 
     # generates a block at a given visible, non-satisfied tile
     def _gen_block_at_tile(self, tile_position: (int, int)) -> _Block:
@@ -411,6 +533,15 @@ class Solver:
 
         return new_block
 
+    # cleans up all if the given blocks before deleting them
+    def _clean_blocks(self, blocks: [_Block]):
+        _Block.num_ids = 0
+
+        for block in blocks:
+            for item in block.tiles:
+                x, y = item
+                self._grid[x][y].parent_ids.clear()
+
     # returns true if the tile has a valid number of flags around it
     def _valid_tile(self, x: int, y: int) -> bool:
         value = self._grid[x][y].get_value()
@@ -422,7 +553,7 @@ class Solver:
 
         return value == 0
 
-    # returns true if all visible tiles are valid and all flags are placed
+    # returns true if all visible tiles are valid and less than the max flags are placed
     @_consistent_game_check
     def _valid_grid(self, g: game.Game) -> bool:
         flags: int = 0
@@ -434,7 +565,7 @@ class Solver:
                 elif self._grid[x][y].state is tile.State.visible and not self._valid_tile(x, y):
                     return False
 
-        return flags == g.get_mines()
+        return flags <= g.get_mines()
 
     def print(self):
         print('  ', end='')
