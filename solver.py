@@ -423,15 +423,15 @@ class Solver:
             all_blocks.append(new_block)
             max_mines += new_block.mines
 
-        # add the main tile back in once blocks are generated
+        # add the main tile in once blocks are generated
         adjacent_tiles.append((x, y))
 
         # count the number of tiles that are in blocks
         all_tiles: [(int, int)] = []
         for block in all_blocks:
-            for _tile in block.tiles:
-                if _tile not in all_tiles:
-                    all_tiles.append(_tile)
+            for working_tile in block.tiles:
+                if working_tile not in all_tiles:
+                    all_tiles.append(working_tile)
 
         # the number of mines cannot be greater than the number of tiles in blocks
         max_mines = min(len(all_tiles), max_mines)
@@ -473,7 +473,8 @@ class Solver:
             max_mines -= 1
 
         # check solutions against the entire grid, saving the data from the valid ones
-        data: [float] = []
+        # the data vector stores the number of solutions in which any given tile is a mine
+        data: [int] = []
         num_valid_soln: int = 0
         for _ in range(len(all_tiles)):
             # initialization of data list
@@ -486,7 +487,7 @@ class Solver:
                     i, j = all_tiles[item]
                     self._grid[i][j].state = tile.State.flag
 
-            # check for validity of entire board
+            # check that no tiles on the grid are over-burdened with flags
             valid = self._lt_valid_grid(g)
 
             if valid:
@@ -505,6 +506,7 @@ class Solver:
             self._clean_blocks(all_blocks)
             return False
 
+        # parse data to see which tiles are always mines or always safe
         did_action: bool = False
         for item in range(len(data)):
             if data[item] == num_valid_soln:
