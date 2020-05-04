@@ -378,6 +378,7 @@ class Solver:
     # returns true if it was able to make a change to the board
     @_consistent_game_check
     def _do_prob_placement(self, g: game.Game, hint: (int, int)) -> bool:
+        self._update_grid(g)
         self._reset_visited()
         wavefront = collections.deque([hint])
 
@@ -518,7 +519,7 @@ class Solver:
     # generates a block at a given visible, non-satisfied tile
     def _gen_block_at_tile(self, tile_position: (int, int)) -> _Block:
         x, y = tile_position
-        if self._grid[x][y].state is not tile.State.visible or self._grid[x][y].is_satisfied:
+        if self._grid[x][y].state is not tile.State.visible or self._grid[x][y].is_satisfied():
             raise BlockGenerationError("Given tile is not a valid candidate to generate a block", tile_position)
 
         # number of mines in this block
@@ -584,7 +585,7 @@ class Solver:
 
 
 if __name__ == "__main__":
-    g = game.Game()
+    g = game.Game(testing=True)
 
     print("Welcome to mines! Created by mattlourenco27 on github")
 
@@ -642,6 +643,11 @@ if __name__ == "__main__":
 
                 if values[0].upper() == 'SOLVE' and values[1].upper() == 'ONE' and values[2].upper() == 'STEP':
                     solver._do_logic_wave(g, last_move_user, (int(size / 2), int(size / 2)))
+                    last_move_user = False
+                    break
+
+                if values[0].upper() == 'P' and values[1].upper() == 'R' and values[2].upper() == 'O':
+                    solver._do_prob_placement(g, (2, 1))
                     last_move_user = False
                     break
 

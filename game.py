@@ -124,7 +124,7 @@ self.left_mouse_button(self, x: int, y: int): reveals the tile at the given posi
 
 self.right_mouse_button(self, x: int, y: int): cycles the state of a covered tile
     """
-    def __init__(self):
+    def __init__(self, testing: bool = False):
         # state variable that keeps track of the game
         self._state = State.beforeStart
 
@@ -137,6 +137,9 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
 
         # true if board has been clicked once
         self._first_click = False
+
+        # flag set to True if this game is used for testing
+        self._testing = testing
 
         # grid that will be used to store the game board
         self._grid: [[tile.Tile]] = []
@@ -233,7 +236,13 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
             return
 
         if not self._first_click:
-            self._populate(x, y)
+            if not self._testing:
+                self._populate(x, y)
+            else:
+                self._mines = 3
+                self._grid[1][0].set_value(tile.MINE)
+                self._grid[3][0].set_value(tile.MINE)
+                self._grid[5][0].set_value(tile.MINE)
             self._update_all_tiles()
             self._first_click = True
 
