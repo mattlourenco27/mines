@@ -423,6 +423,9 @@ class Solver:
             all_blocks.append(new_block)
             max_mines += new_block.mines
 
+        # add the main tile back in once blocks are generated
+        adjacent_tiles.append((x, y))
+
         # count the number of tiles that are in blocks
         all_tiles: [(int, int)] = []
         for block in all_blocks:
@@ -484,7 +487,7 @@ class Solver:
                     self._grid[i][j].state = tile.State.flag
 
             # check for validity of entire board
-            valid = self._valid_grid(g)
+            valid = self._lt_valid_grid(g)
 
             if valid:
                 num_valid_soln += 1
@@ -516,6 +519,8 @@ class Solver:
                 g.left_mouse_button(i, j)
 
         self._clean_blocks(all_blocks)
+        if did_action:
+            self._update_grid(g)
         return did_action
 
     # generates a block at a given visible, non-satisfied tile
@@ -556,7 +561,7 @@ class Solver:
 
         return value == 0
 
-    # returns true if all visible tiles are valid and less than the max flags are placed
+    # returns true if all visible tiles are valid and the max flags are placed exactly
     @_consistent_game_check
     def _valid_grid(self, g: game.Game) -> bool:
         flags: int = 0
@@ -567,6 +572,27 @@ class Solver:
                     flags += 1
                 elif self._grid[x][y].state is tile.State.visible and not self._valid_tile(x, y):
                     return False
+
+        return flags == g.get_mines()
+
+    # returns true if no tiles are invalid
+    def _lt_valid_grid(self, g: game.Game) -> bool:
+        flags: int = 0
+
+        for x in range(self._size):
+            for y in range(self._size):
+                if self._grid[x][y].state is tile.State.flag:
+                    flags += 1
+                elif self._grid[x][y].state is tile.State.visible:
+                    value = self._grid[x][y].get_value()
+
+                    for item in self._grid[x][y].adjacent:
+                        i, j = item
+                        if self._grid[i][j].state is tile.State.flag:
+                            value -= 1
+
+                    if value < 0:
+                        return False
 
         return flags <= g.get_mines()
 
@@ -587,7 +613,7 @@ class Solver:
 
 
 if __name__ == "__main__":
-    g = game.Game(testing=True)
+    g = game.Game()
 
     print("Welcome to mines! Created by mattlourenco27 on github")
 
@@ -619,6 +645,7 @@ if __name__ == "__main__":
 
     print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
     print("Type 'solve one step' to do one logical step over the board")
+    print("Type 'prob' then co-ordinates to do a probability check")
 
     solver = Solver(g)
 
@@ -644,12 +671,16 @@ if __name__ == "__main__":
                     quit()
 
                 if values[0].upper() == 'SOLVE' and values[1].upper() == 'ONE' and values[2].upper() == 'STEP':
-                    solver._do_logic_wave(g, last_move_user, (int(size / 2), int(size / 2)))
+                    success = solver._do_logic_wave(g, last_move_user, (int(size / 2), int(size / 2)))
+                    if not success:
+                        print("Unseccessful")
                     last_move_user = False
                     break
 
-                if values[0].upper() == 'P' and values[1].upper() == 'R' and values[2].upper() == 'O':
-                    solver._do_prob_placement(g, (2, 1))
+                if values[0].upper() == 'PROB':
+                    success = solver._do_prob_placement(g, (int(values[1]), int(values[2])))
+                    if not success:
+                        print("Unseccessful")
                     last_move_user = False
                     break
 
