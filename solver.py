@@ -104,8 +104,8 @@ def _permute(items: int, length: int):
 
     # return full list of True
     if items >= length:
-        for _ in range(length):
-            solutions[0] = True
+        for i in range(length):
+            solutions[0][i] = True
 
         return solutions
 
@@ -117,7 +117,7 @@ def _permute(items: int, length: int):
 
             # find the last true element in this temp list
             final_true: int = -1
-            for i in range(length - 1, -1, -1): # scan the list in reverse
+            for i in range(length - 1, -1, -1):  # scan the list in reverse
                 if temp[i]:
                     final_true = i
                     break
@@ -304,7 +304,7 @@ class Solver:
                             self._update_grid(g)
                             break
 
-                    #self.print()
+                    # self.print()
 
                 # next check if the number of covered spaces + number of flags is equal to the tile value
                 elif flags + len(self._grid[x][y].covered) == self._grid[x][y].get_value():
@@ -317,7 +317,7 @@ class Solver:
                         i, j = element
                         self._update_tile(g, i, j)
 
-                    #self.print()
+                    # self.print()
 
             for i in range(x - 1, x + 2):
                 for j in range(y - 1, y + 2):
@@ -411,12 +411,13 @@ class Solver:
             for tile_element in self._grid[i][j].adjacent:
                 m, n = tile_element
 
-                if self._grid[m][n].state is tile.State.visible and not self._grid[m][n].is_satisfied() and not tile_element in adjacent_tiles:
+                if (m, n) != (x, y) and self._grid[m][n].state is tile.State.visible and not self._grid[m][
+                    n].is_satisfied() and tile_element not in adjacent_tiles:
                     adjacent_tiles.append(tile_element)
 
         # generate a block for each of these tiles
         all_blocks: [_Block] = [main_block]
-        max_mines: int = main_block.mines # the maximum number of mines in these blocks
+        max_mines: int = main_block.mines  # the maximum number of mines in these blocks
         for working_tile in adjacent_tiles:
             new_block: _Block = self._gen_block_at_tile(working_tile)
             all_blocks.append(new_block)
@@ -425,15 +426,15 @@ class Solver:
         # count the number of tiles that are in blocks
         all_tiles: [(int, int)] = []
         for block in all_blocks:
-            for tile in block.tiles:
-                if not tile in all_tiles:
-                    all_tiles.append(tile)
+            for _tile in block.tiles:
+                if _tile not in all_tiles:
+                    all_tiles.append(_tile)
 
         # the number of mines cannot be greater than the number of tiles in blocks
         max_mines = min(len(all_tiles), max_mines)
 
         # iterate to generate every possible placement of mines
-        solutions = collections.deque([[]])
+        solutions = collections.deque([])
 
         while max_mines > 0:
             # start with max_mines and generate possible solutions, decreasing max_mines until it hits zero
@@ -483,12 +484,13 @@ class Solver:
                     self._grid[i][j].state = tile.State.flag
 
             # check for validity of entire board
-            valid = self._valid_grid()
+            valid = self._valid_grid(g)
 
             if valid:
                 num_valid_soln += 1
                 for item in range(len(all_tiles)):
-                    data[item] += 1
+                    if arrangement[item]:
+                        data[item] += 1
 
             # reset placed flags
             for item in range(len(arrangement)):
