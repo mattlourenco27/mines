@@ -18,6 +18,7 @@ Exceptions:
 import random
 import tile
 from enum import Enum, auto
+import collections
 
 
 class Error(Exception):
@@ -353,14 +354,18 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
     # reveals all blanks starting from this tile
     # also reveals tiles surrounding blanks
     def _reveal_adjacent_blanks(self, x: int, y: int):
-        blanks: [(int, int)] = []
+        blanks = collections.deque([])
         if self._grid[x][y].is_blank():
             blanks.append((x, y))
 
         while len(blanks) > 0:
             x_pos: int
             y_pos: int
-            x_pos, y_pos = blanks.pop()
+            x_pos, y_pos = blanks.popleft()
+
+            # if this blank is already visible, it has already been processed
+            if self._grid[x_pos][y_pos].state is tile.State.visible:
+                continue
 
             # if this was a flag reduce the flag count
             if self._grid[x_pos][y_pos].state is tile.State.flag:
@@ -381,7 +386,8 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
                                 self._flags -= 1
 
                             # make all non-blank adjacent tiles visible
-                            self._grid[i][j].state = tile.State.visible
+                            if not self._grid[i][j].is_blank():
+                                self._grid[i][j].state = tile.State.visible
 
     # checks if the game was won
     def _check_win(self) -> bool:
