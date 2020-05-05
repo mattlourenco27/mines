@@ -400,31 +400,24 @@ class Solver:
 
     # helper functions for the _do_prob_placement function
     # returns true upon success of placing a flag or uncovering a tile
-    def _prob_placement_helper(self, g: game.Game, x: int, y: int) -> bool:
+    def _prob_placement_helper(self, g: game.Game, x_root: int, y_root: int) -> bool:
         # generate the main block of this analysis
-        main_block: _Block = self._gen_block_at_tile((x, y))
+        main_block: _Block = self._gen_block_at_tile((x_root, y_root))
 
-        # find all adjacent non_satisfied, visible tiles
-        adjacent_tiles: [(int, int)] = []
-        for covered_tile in main_block.tiles:
-            i, j = covered_tile
-            for tile_element in self._grid[i][j].adjacent:
-                m, n = tile_element
-
-                if (m, n) != (x, y) and self._grid[m][n].state is tile.State.visible and not self._grid[m][
-                    n].is_satisfied() and tile_element not in adjacent_tiles:
-                    adjacent_tiles.append(tile_element)
-
-        # generate a block for each of these tiles
+        # find all non_satisfied, visible tiles that interact with this block. these will the roots for blocks
+        root_tiles: [(int, int)] = [(x_root, y_root)]
         all_blocks: [_Block] = [main_block]
         max_mines: int = main_block.mines  # the maximum number of mines in these blocks
-        for working_tile in adjacent_tiles:
-            new_block: _Block = self._gen_block_at_tile(working_tile)
-            all_blocks.append(new_block)
-            max_mines += new_block.mines
+        for covered_tile in main_block.tiles:
+            x, y = covered_tile
+            for adjacent_tile in self._grid[x][y].adjacent:
+                i, j = adjacent_tile
 
-        # add the main tile in once blocks are generated
-        adjacent_tiles.append((x, y))
+                if self._grid[i][j].state is tile.State.visible and not self._grid[i][j].is_satisfied() and adjacent_tile not in root_tiles:
+                    root_tiles.append(adjacent_tile)
+                    new_block: _Block = self._gen_block_at_tile(adjacent_tile)
+                    all_blocks.append(new_block)
+                    max_mines += new_block.mines
 
         # count the number of tiles that are in blocks
         all_tiles: [(int, int)] = []
@@ -453,10 +446,10 @@ class Solver:
                         i, j = all_tiles[item]
                         self._grid[i][j].state = tile.State.flag
 
-                # check for validity of adjacent tiles
+                # check for validity of root tiles
                 all_valid = True
-                for item in range(len(adjacent_tiles)):
-                    i, j = adjacent_tiles[item]
+                for item in range(len(root_tiles)):
+                    i, j = root_tiles[item]
                     if not self._valid_tile(i, j):
                         all_valid = False
                         break
