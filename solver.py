@@ -386,7 +386,7 @@ class Solver:
             x, y = wavefront.popleft()
 
             if self._grid[x][y].state is tile.State.visible and not self._grid[x][y].is_satisfied():
-                return self._prob_placement_helper2(g, x, y)
+                return self._prob_placement_helper(g, x, y)
 
             for i in range(x - 1, x + 2):
                 for j in range(y - 1, y + 2):
@@ -405,140 +405,15 @@ class Solver:
         main_block: _Block = self._gen_block_at_tile((x_root, y_root))
 
         # find all non_satisfied, visible tiles that interact with this block. these will the roots for blocks
-        root_tiles: [(int, int)] = [(x_root, y_root)]
         all_blocks: [_Block] = [main_block]
-        max_mines: int = main_block.mines  # the maximum number of mines in these blocks
         for covered_tile in main_block.tiles:
             x, y = covered_tile
             for adjacent_tile in self._grid[x][y].adjacent:
                 i, j = adjacent_tile
 
-                if self._grid[i][j].state is tile.State.visible and not self._grid[i][j].is_satisfied() and adjacent_tile not in root_tiles:
-                    root_tiles.append(adjacent_tile)
+                if self._grid[i][j].state is tile.State.visible and not self._grid[i][j].is_satisfied():
                     new_block: _Block = self._gen_block_at_tile(adjacent_tile)
                     all_blocks.append(new_block)
-                    max_mines += new_block.mines
-
-        # count the number of tiles that are in blocks
-        all_tiles: [(int, int)] = []
-        for block in all_blocks:
-            for working_tile in block.tiles:
-                if working_tile not in all_tiles:
-                    all_tiles.append(working_tile)
-
-        # the number of mines cannot be greater than the number of tiles in blocks
-        max_mines = min(len(all_tiles), max_mines)
-
-        # iterate to generate every possible placement of mines
-        solutions = collections.deque([])
-
-        while max_mines > 0:
-            # start with max_mines and generate possible solutions, decreasing max_mines until it hits zero
-
-            possibilities = collections.deque(_permute(max_mines, len(all_tiles)))
-
-            # check every possibility
-            for arrangement in possibilities:
-
-                # place flags at true markers
-                for item in range(len(arrangement)):
-                    if arrangement[item]:
-                        i, j = all_tiles[item]
-                        self._grid[i][j].state = tile.State.flag
-
-                # check for validity of root tiles
-                all_valid = True
-                for item in range(len(root_tiles)):
-                    i, j = root_tiles[item]
-                    if not self._valid_tile(i, j):
-                        all_valid = False
-                        break
-
-                if all_valid:
-                    solutions.append(arrangement)
-
-                # reset placed flags
-                for item in range(len(arrangement)):
-                    if arrangement[item]:
-                        i, j = all_tiles[item]
-                        self._grid[i][j].state = tile.State.covered
-
-            max_mines -= 1
-
-        # check solutions against the entire grid, saving the data from the valid ones
-        # the data vector stores the number of solutions in which any given tile is a mine
-        data: [int] = []
-        num_valid_soln: int = 0
-        for _ in range(len(all_tiles)):
-            # initialization of data list
-            data.append(0)
-        for arrangement in solutions:
-
-            # place flags at true markers
-            for item in range(len(arrangement)):
-                if arrangement[item]:
-                    i, j = all_tiles[item]
-                    self._grid[i][j].state = tile.State.flag
-
-            # check that no tiles on the grid are over-burdened with flags
-            valid = self._lt_valid_grid(g)
-
-            if valid:
-                num_valid_soln += 1
-                for item in range(len(all_tiles)):
-                    if arrangement[item]:
-                        data[item] += 1
-
-            # reset placed flags
-            for item in range(len(arrangement)):
-                if arrangement[item]:
-                    i, j = all_tiles[item]
-                    self._grid[i][j].state = tile.State.covered
-
-        if num_valid_soln == 0:
-            self._clean_blocks(all_blocks)
-            return False
-
-        # parse data to see which tiles are always mines or always safe
-        did_action: bool = False
-        for item in range(len(data)):
-            if data[item] == num_valid_soln:
-                # flag tiles that are always mines
-                did_action = True
-                i, j = all_tiles[item]
-                g.right_mouse_button(i, j)
-            elif data[item] == 0:
-                # click tiles that are never mines
-                did_action = True
-                i, j = all_tiles[item]
-                g.left_mouse_button(i, j)
-
-        self._clean_blocks(all_blocks)
-        if did_action:
-            self._update_grid(g)
-        return did_action
-
-    # helper functions for the _do_prob_placement function
-    # returns true upon success of placing a flag or uncovering a tile
-    def _prob_placement_helper2(self, g: game.Game, x_root: int, y_root: int) -> bool:
-        # generate the main block of this analysis
-        main_block: _Block = self._gen_block_at_tile((x_root, y_root))
-
-        # find all non_satisfied, visible tiles that interact with this block. these will the roots for blocks
-        root_tiles: [(int, int)] = [(x_root, y_root)]
-        all_blocks: [_Block] = [main_block]
-        max_mines: int = main_block.mines  # the maximum number of mines in these blocks
-        for covered_tile in main_block.tiles:
-            x, y = covered_tile
-            for adjacent_tile in self._grid[x][y].adjacent:
-                i, j = adjacent_tile
-
-                if self._grid[i][j].state is tile.State.visible and not self._grid[i][
-                    j].is_satisfied() and adjacent_tile not in root_tiles:
-                    root_tiles.append(adjacent_tile)
-                    new_block: _Block = self._gen_block_at_tile(adjacent_tile)
-                    all_blocks.append(new_block)
-                    max_mines += new_block.mines
 
         # list of all tiles in these blocks
         # this list should not be modified after initialization
@@ -547,9 +422,6 @@ class Solver:
             for working_tile in block.tiles:
                 if working_tile not in all_tiles:
                     all_tiles.append(working_tile)
-
-        # the number of mines cannot be greater than the number of tiles in blocks
-        max_mines = min(len(all_tiles), max_mines)
 
         # iterate to generate every possible placement of mines
         solutions = collections.deque([])
