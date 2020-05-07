@@ -183,6 +183,7 @@ class Solver:
     # returns true if it was able to make a guess
     @_consistent_game_check
     def guess(self, g: game.Game) -> bool:
+        self._update_grid(g)
         data = self._do_prob_wave(g, return_data=True)
 
         if len(data[0]) == 0:
@@ -194,7 +195,7 @@ class Solver:
         max_prob: float = 0 # %
         max_index: int = -1
         max_is_safe: bool = True
-        for i in len(data[1]):
+        for i in range(len(data[1])):
             if data[1][i] > max_prob:
                 max_prob = data[1][i]
                 max_index = i
