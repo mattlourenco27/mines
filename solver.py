@@ -166,7 +166,7 @@ class Solver:
     # will only edit tiles in a way that is guaranteed to be safe
     # returns true if it changed any of the grid tiles
     @_consistent_game_check
-    def solve_next_step(self, g: game.Game):
+    def solve_next_step(self, g: game.Game) -> bool:
         self._update_grid(g)
 
         logic_success: bool = self._do_logic_wave(g, False, (int(self._size * 0.5), int(self._size * 0.5)))
@@ -226,6 +226,15 @@ class Solver:
 
         return True
 
+    # solves the game
+    # may guess if there is no other choice
+    def solve(self, g:game.Game):
+        while not g.game_done():
+            success: bool = self.solve_next_step(g)
+
+            if not success:
+                print("Guessing . . .")
+                self.guess(g)
 
     # update the local state of the tile at the specified position
     @_consistent_game_check
@@ -898,8 +907,9 @@ if __name__ == "__main__":
             print("Please enter a valid number of mines")
 
     print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
-    print("Type 'solve one step' to have the solver analyze the board and place what it can")
+    print("Type 'next' to have the solver analyze the board and place what it can")
     print("Type 'guess' to have the solver use probability to make the best guess it can")
+    print("Type 'Solve' to have the solver complete the game to the best of its abilities")
 
     solver = Solver(g)
 
@@ -921,7 +931,11 @@ if __name__ == "__main__":
                     print("Exiting...")
                     quit()
 
-                if values[0].upper() == 'SOLVE' and values[1].upper() == 'ONE' and values[2].upper() == 'STEP':
+                if values[0].upper() == 'SOLVE':
+                    solver.solve(g)
+                    break
+
+                if values[0].upper() == 'NEXT':
                     success = solver.solve_next_step(g)
                     if not success:
                         print("Unsuccessful")
