@@ -886,11 +886,9 @@ if __name__ == "__main__":
 
     print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
     print("Type 'solve one step' to have the solver analyze the board and place what it can")
+    print("Type 'guess' to have the solver use probability to make the best guess it can")
 
     solver = Solver(g)
-
-    # true if the last move was made by a user
-    last_move_user = False
 
     while not g.game_done():
         # print the grid
@@ -914,7 +912,12 @@ if __name__ == "__main__":
                     success = solver.solve_next_step(g)
                     if not success:
                         print("Unsuccessful")
-                    last_move_user = False
+                    break
+
+                if values[0].upper() == 'GUESS':
+                    success = solver.guess(g)
+                    if not success:
+                        print("Unsuccessful")
                     break
 
                 if values[0].upper() != 'L' and values[0].upper() != 'R':
@@ -924,8 +927,6 @@ if __name__ == "__main__":
                 left = values[0].upper() == 'L'
                 x = int(values[1])
                 y = int(values[2])
-
-                last_move_user = True
 
                 if left:
                     g.left_mouse_button(x, y)
