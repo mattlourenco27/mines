@@ -147,6 +147,9 @@ class Solver:
         # list of tiles that were visited and need to be returned to normal
         self._visited_tiles: [(int, int)] = []
 
+        # number of mines on the board
+        self._mines = g.get_mines()
+
         # size of the board
         self._size = g.get_size()
 
@@ -157,6 +160,22 @@ class Solver:
 
         # initialize grid tile parameters
         self._update_grid(g)
+
+    # solves one step of the the board
+    # can place multiple flags or reveal multiple tiles in one call if they are obvious
+    # returns true if it changed any of the grid tiles
+    def solve_next_step(self, g: game.Game):
+        self._update_grid(g)
+
+        logic_success: bool = self._do_logic_wave(g, False, (int(self._size * 0.5), int(self._size * 0.5)))
+        prob_success: bool
+
+        if not logic_success:
+            prob_success = self._do_prob_wave(g)
+        else:
+            return True
+
+        return prob_success
 
     # update the local state of the tile at the specified position
     @_consistent_game_check
@@ -400,6 +419,7 @@ class Solver:
 
     # helper functions for the _do_prob_placement function
     # returns true upon success of placing a flag or uncovering a tile
+    @_consistent_game_check
     def _prob_placement_helper(self, g: game.Game, x_root: int, y_root: int) -> bool:
         # generate the main block of this analysis
         main_block: _Block = self._gen_block_at_tile((x_root, y_root))
@@ -412,8 +432,7 @@ class Solver:
                 i, j = adjacent_tile
 
                 if self._grid[i][j].state is tile.State.visible and not self._grid[i][j].is_satisfied():
-                    new_block: _Block = self._gen_block_at_tile(adjacent_tile)
-                    all_blocks.append(new_block)
+                    all_blocks.append(self._gen_block_at_tile(adjacent_tile))
 
         # list of all tiles in these blocks
         # this list should not be modified after initialization
@@ -551,6 +570,146 @@ class Solver:
             self._update_grid(g)
         return did_action
 
+    # do a probability evaluation of all of the tiles on the grid to see which are guarenteed to be mines or safe
+    # returns true if it made a change to the grid tiles
+    @_consistent_game_check
+    def _do_prob_wave(self, g: game.Game) -> bool:
+        # find all non_satisfied, visible tiles. these will the roots for blocks
+        all_blocks: [_Block] = []
+
+        # list of all tiles in these blocks
+        # this list should not be modified after initialization
+        all_tiles: [(int, int)] = []
+
+        for x in range(self._size):
+            for y in range(self._size):
+                if self._grid[x][y].state is tile.State.visible and not self._grid[x][y].is_satisfied():
+                    all_blocks.append(self._gen_block_at_tile((x, y)))
+                elif self._grid[x][y].state is tile.State.covered:
+                    # add this covered tile to all_tiles if there are viable tiles beside it
+                    for adjacent_tile in self._grid[x][y].adjacent_tiles:
+                        i, j = adjacent_tile
+                        if self._grid[i][j].state is tile.State.visible and not self._grid[i][j].is_satisfied():
+                            all_tiles.append((x, y))
+                            break
+
+        # total flags on the grid during permutation
+        total_flags: int = g.get_flags()
+
+        # iterate to generate every possible placement of mines
+        solutions = collections.deque([])
+
+        # define recursive function that permutes every combination of mines in the blocks
+        def permute_blocks(index: int):
+            nonlocal self
+            nonlocal all_blocks
+            nonlocal all_tiles
+            nonlocal total_flags
+            nonlocal solutions
+
+            current: _Block = all_blocks[index]
+
+            # return if this block cannot be satisfied
+            if current.mines < 0:
+                return
+            if current.mines > len(current.tiles):
+                return
+
+            possibilities = collections.deque(_permute(current.mines, len(current.tiles)))
+
+            for arrangement in possibilities:
+                # set flags
+                for i in range(len(current.tiles)):
+                    if arrangement[i]:
+                        x, y = current.tiles[i]
+                        self._grid[x][y].state = tile.State.flag
+                        total_flags += 1
+
+                # update blocks
+                for i in range(len(current.tiles)):
+                    x, y = current.tiles[i]
+                    if arrangement[i]:
+                        for block_id in self._grid[x][y].parent_ids:
+                            if block_id != current.id:
+                                all_blocks[block_id].mines -= 1
+                                all_blocks[block_id].tiles.remove(current.tiles[i])
+                    else:
+                        for block_id in self._grid[x][y].parent_ids:
+                            if block_id != current.id:
+                                all_blocks[block_id].tiles.remove(current.tiles[i])
+
+                # permute the next block if there is a next block and there are enough flags left
+                if index < len(all_blocks) - 1 and total_flags <= self._mines:
+                    permute_blocks(index + 1)
+                elif total_flags <= self._mines:
+                    # scan all tiles and generate a solution
+                    solution: bool = []
+                    for item in all_tiles:
+                        x, y = item
+                        if self._grid[x][y].state is tile.State.flag:
+                            solution.append(True)
+                        else:
+                            solution.append(False)
+                    solutions.append(solution)
+
+                # reset changed blocks
+                for i in range(len(current.tiles)):
+                    x, y = current.tiles[i]
+                    if arrangement[i]:
+                        for block_id in self._grid[x][y].parent_ids:
+                            if block_id != current.id:
+                                all_blocks[block_id].mines += 1
+                                all_blocks[block_id].tiles.append(current.tiles[i])
+                    else:
+                        for block_id in self._grid[x][y].parent_ids:
+                            if block_id != current.id:
+                                all_blocks[block_id].tiles.append(current.tiles[i])
+
+                # remove placed flags
+                for i in range(len(current.tiles)):
+                    if arrangement[i]:
+                        x, y = current.tiles[i]
+                        self._grid[x][y].state = tile.State.covered
+                        total_flags -= 1
+
+        permute_blocks(0)
+
+        # done with blocks
+        self._clean_blocks(all_blocks)
+
+        num_valid_soln: int = len(solutions)
+        if num_valid_soln == 0:
+            return False
+
+        # the data vector stores the number of solutions in which any given tile is a mine
+        data: [int] = []
+        for _ in range(len(all_tiles)):
+            # initialization of data list
+            data.append(0)
+
+        for arrangement in solutions:
+            for item in range(len(all_tiles)):
+                if arrangement[item]:
+                    data[item] += 1
+
+        # parse data to see which tiles are always mines or always safe
+        did_action: bool = False
+        for item in range(len(data)):
+            if data[item] == num_valid_soln:
+                # flag tiles that are always mines
+                did_action = True
+                i, j = all_tiles[item]
+                g.right_mouse_button(i, j)
+            elif data[item] == 0:
+                # click tiles that are never mines
+                did_action = True
+                i, j = all_tiles[item]
+                g.left_mouse_button(i, j)
+
+        if did_action:
+            self._update_grid(g)
+        return did_action
+
     # generates a block at a given visible, non-satisfied tile
     def _gen_block_at_tile(self, tile_position: (int, int)) -> _Block:
         x, y = tile_position
@@ -672,8 +831,7 @@ if __name__ == "__main__":
             print("Please enter a valid number of mines")
 
     print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
-    print("Type 'solve one step' to do one logical step over the board")
-    print("Type 'prob' then co-ordinates to do a probability check")
+    print("Type 'solve one step' to have the solver analyze the board and place what it can")
 
     solver = Solver(g)
 
@@ -699,16 +857,9 @@ if __name__ == "__main__":
                     quit()
 
                 if values[0].upper() == 'SOLVE' and values[1].upper() == 'ONE' and values[2].upper() == 'STEP':
-                    success = solver._do_logic_wave(g, last_move_user, (int(size / 2), int(size / 2)))
+                    success = solver.solve_next_step(g)
                     if not success:
-                        print("Unseccessful")
-                    last_move_user = False
-                    break
-
-                if values[0].upper() == 'PROB':
-                    success = solver._do_prob_placement(g, (int(values[1]), int(values[2])))
-                    if not success:
-                        print("Unseccessful")
+                        print("Unsuccessful")
                     last_move_user = False
                     break
 
