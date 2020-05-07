@@ -188,7 +188,19 @@ class Solver:
 
         if len(data[0]) == 0:
             # there is no data to work with
-            return False
+            # check if the board has simply not been clicked yet
+
+            all_covered: bool = True
+            for x in range(self._size):
+                for y in range(self._size):
+                    if self._grid[x][y].state is not tile.State.covered:
+                        all_covered = False
+
+            if all_covered:
+                g.left_mouse_button(0, 0)
+                return True
+            else:
+                return False
 
         # find the most likely to be a mine or the most likely to be safe and click it
 
