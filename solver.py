@@ -163,7 +163,9 @@ class Solver:
 
     # solves one step of the the board
     # can place multiple flags or reveal multiple tiles in one call if they are obvious
+    # will only edit tiles in a way that is guaranteed to be safe
     # returns true if it changed any of the grid tiles
+    @_consistent_game_check
     def solve_next_step(self, g: game.Game):
         self._update_grid(g)
 
@@ -176,6 +178,41 @@ class Solver:
             return True
 
         return prob_success
+
+    # will use probability to make the best guess of where to click next
+    # returns true if it was able to make a guess
+    @_consistent_game_check
+    def guess(self, g: game.Game) -> bool:
+        data = self._do_prob_wave(g, return_data=True)
+
+        if len(data[0]) == 0:
+            # there is no data to work with
+            return False
+
+        # find the most likely to be a mine or the most likely to be safe and click it
+
+        max_prob: float = 0 # %
+        max_index: int = -1
+        max_is_safe: bool = True
+        for i in len(data[1]):
+            if data[1][i] > max_prob:
+                max_prob = data[1][i]
+                max_index = i
+                max_is_safe = False
+            elif 100 - data[1][i] > max_prob:
+                max_prob = 100 - data[1][i]
+                max_index = i
+                max_is_safe = True
+
+        x, y = data[0][max_index]
+
+        if max_is_safe:
+            g.left_mouse_button(x, y)
+        else:
+            g.right_mouse_button(x, y)
+
+        return True
+
 
     # update the local state of the tile at the specified position
     @_consistent_game_check
@@ -572,8 +609,9 @@ class Solver:
 
     # do a probability evaluation of all of the tiles on the grid to see which are guarenteed to be mines or safe
     # returns true if it made a change to the grid tiles
+    # if return_data=True the function will instead return the data it generated
     @_consistent_game_check
-    def _do_prob_wave(self, g: game.Game) -> bool:
+    def _do_prob_wave(self, g: game.Game, return_data=False):
         # find all non_satisfied, visible tiles. these will the roots for blocks
         all_blocks: [_Block] = []
 
@@ -595,6 +633,8 @@ class Solver:
 
         # return if there are no blocks that can be generated
         if len(all_blocks) == 0:
+            if return_data:
+                return [[], []]
             return False
 
         # total flags on the grid during permutation
@@ -695,6 +735,16 @@ class Solver:
             for item in range(len(all_tiles)):
                 if arrangement[item]:
                     data[item] += 1
+
+        if return_data:
+            # convert data to percent probability
+            result_data = [all_tiles]
+            percentages: [float] = []
+            for item in range(len(data)):
+                percentages.append(data[item] / num_valid_soln * 100)
+
+            result_data.append(percentages)
+            return result_data
 
         # parse data to see which tiles are always mines or always safe
         did_action: bool = False
