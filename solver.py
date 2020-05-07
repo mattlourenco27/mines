@@ -587,11 +587,15 @@ class Solver:
                     all_blocks.append(self._gen_block_at_tile((x, y)))
                 elif self._grid[x][y].state is tile.State.covered:
                     # add this covered tile to all_tiles if there are viable tiles beside it
-                    for adjacent_tile in self._grid[x][y].adjacent_tiles:
+                    for adjacent_tile in self._grid[x][y].adjacent:
                         i, j = adjacent_tile
                         if self._grid[i][j].state is tile.State.visible and not self._grid[i][j].is_satisfied():
                             all_tiles.append((x, y))
                             break
+
+        # return if there are no blocks that can be generated
+        if len(all_blocks) == 0:
+            return False
 
         # total flags on the grid during permutation
         total_flags: int = g.get_flags()
