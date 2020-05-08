@@ -25,7 +25,7 @@ class Gui:
 
         pygame.display.set_caption("'Mines' made by mattlourenco27 on Github")
         # Icon made by Creaticca Creative Agency from www.flaticon.com
-        icon = pygame.image.load("./assets/sprites/weapons.png")
+        icon = pygame.image.load("./assets/sprites/icon.png")
         pygame.display.set_icon(icon)
 
     # Start the gui
