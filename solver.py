@@ -452,8 +452,6 @@ self.solve(self, g:game.Game):
                             self._update_grid(g)
                             break
 
-                    # self.print()
-
                 # next check if the number of covered spaces + number of flags is equal to the tile value
                 elif flags + len(self._grid[x][y].covered) == self._grid[x][y].get_value():
                     did_action = True
@@ -464,8 +462,6 @@ self.solve(self, g:game.Game):
                     for element in self._grid[x][y].adjacent:
                         i, j = element
                         self._update_tile(g, i, j)
-
-                    # self.print()
 
             for i in range(x - 1, x + 2):
                 for j in range(y - 1, y + 2):
@@ -930,21 +926,6 @@ self.solve(self, g:game.Game):
                         return False
 
         return flags <= g.get_mines()
-
-    def print(self):
-        print('  ', end='')
-        for i in range(self._size):
-            print(str(i) + ' ', end='')
-        print()
-
-        count = 0
-        for y in range(len(self._grid[0])):
-            print(str(count) + ' ', end='')
-            count += 1
-            for x in range(len(self._grid)):
-                print(str(self._grid[x][y]) + ' ', end='')
-            print()
-        print()
 
 
 if __name__ == "__main__":
