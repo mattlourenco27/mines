@@ -15,10 +15,10 @@ class Gui:
 
     def __init__(self):
         # game clock
-        self.clock: pygame.time.Clock
+        self.clock = pygame.time.Clock()
 
         # screen
-        self.screen: pygame.display.Surface
+        self.screen = pygame.display.set_mode((Gui.CANVAS_SIZE, Gui.CANVAS_SIZE + Gui.COMMANDS_BAR_SIZE))
 
         # Initialize the game
         pygame.init()
@@ -30,22 +30,26 @@ class Gui:
 
     # Start the gui
     def start(self):
-        # Create the game clock
-        self.clock = pygame.time.Clock()
-
-        # Create the screen
-        self.screen = pygame.display.set_mode((Gui.CANVAS_SIZE, Gui.CANVAS_SIZE + Gui.COMMANDS_BAR_SIZE))
-
         # start the game loop
         self._game_loop()
 
+    # draw the canvas where the game of mines will show
     def _draw_base_canvas(self):
+        pass
+
+    # draw the command bar with buttons to click
+    def _draw_command_bar(self):
+        pass
+
+    # draws the mines game and the comman bar
+    def _draw_screen(self):
         self.screen.fill(Gui.GRAY_BLUE)
 
-    def _draw_screen(self):
         self._draw_base_canvas()
+        self._draw_command_bar()
         pygame.display.update()
 
+    # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):
         running = True
         while running:
