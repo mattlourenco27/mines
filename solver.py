@@ -339,6 +339,15 @@ self.solve(self, g:game.Game):
         for x in range(self._size):
             for y in range(self._size):
                 self._update_tile(g, x, y)
+        # update the surrounding flags
+        for x in range(self._size):
+            for y in range(self._size):
+                if g.get_tile_state(x, y) is tile.State.visible:
+                    self._grid[x][y].flags = 0
+                    for element in self._grid[x][y].adjacent:
+                        i, j = element
+                        if self._grid[i][j].state is tile.State.flag:
+                            self._grid[x][y].flags += 1
 
     # do a single logical placement of a flag or uncovering a valid covered tile
     # the search starts from the hint starting position
@@ -770,7 +779,7 @@ self.solve(self, g:game.Game):
                     permute_blocks(index + 1)
                 elif total_flags <= self._mines:
                     # scan all tiles and generate a solution
-                    solution: bool = []
+                    solution: [bool] = []
                     for item in all_tiles:
                         x, y = item
                         if self._grid[x][y].state is tile.State.flag:
@@ -806,6 +815,8 @@ self.solve(self, g:game.Game):
 
         num_valid_soln: int = len(solutions)
         if num_valid_soln == 0:
+            if return_data:
+                return [[], []]
             return False
 
         # the data vector stores the number of solutions in which any given tile is a mine
@@ -952,7 +963,7 @@ if __name__ == "__main__":
         except ValueError:
             print("Please enter an integer")
         except game.SizeError:
-            print("Please enter a grid between 10 and 100 tiles wide")
+            print("Please enter a grid between 8 and 50 tiles wide")
 
     mines: int
     while True:

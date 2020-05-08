@@ -192,10 +192,10 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
     # updates the size of self._grid and calls self.reset()
     def set_size(self, s: int):
         if self._state is not State.ongoing:
-            if s < 10:
-                raise SizeError("Invalid board size. size is less than 10")
-            if s > 100:
-                raise SizeError("Invalid board size. size is greater than 100")
+            if s < 8:
+                raise SizeError("Invalid board size. size is less than 8")
+            if s > 50:
+                raise SizeError("Invalid board size. size is greater than 50")
 
             self._size = s
 
@@ -444,7 +444,7 @@ if __name__ == "__main__":
         except ValueError:
             print("Please enter an integer")
         except SizeError:
-            print("Please enter a grid between 10 and 100 tiles wide")
+            print("Please enter a grid between 8 and 50 tiles wide")
 
     mines: int
     while True:
