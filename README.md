@@ -1,9 +1,13 @@
 # Mines
 Created by Matthew Lourenco (mattlourenco27) on github using python3
 
+* [Game Instructions](#Game-Instructions)
 * [Running the console game module](#Running-the-console-game-module)
 * [Running the console solver module](#Running-the-console-solver-module)
 * [GUI version of mines](#GUI-version-of-mines)
+
+## Game Instructions
+You can find detailed gameplay instructions [here](http://zyxyvy.wordpress.com/2012/08/11/the-rules-of-minesweeper/)
 
 ## Running the console game module
 1. Visit the project directory in your terminal / console
@@ -17,7 +21,6 @@ Created by Matthew Lourenco (mattlourenco27) on github using python3
     * The second coordinate is vertical distance starting from the top row (0)
         * ex: "L 0 0" or "R 2 2" or "L 12 9"
     * Flag all of the mines on the grid or reveal all safe spaces to win
-    * See [this page](http://zyxyvy.wordpress.com/2012/08/11/the-rules-of-minesweeper/) for detailed rules
 
 ## Running the console solver module
 1. Visit the project directory in your terminal /  console
