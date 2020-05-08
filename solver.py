@@ -2,6 +2,18 @@
 # Created by: Matthew Lourenco
 # This file solves the mines game using logic and probability when given a game object
 
+"""
+Defines the solver class that performs logic and probability analyses to solve a game of mines
+
+Public objects:
+    * Class solver.Solver
+
+Exceptions:
+    * solver.GameObjectError
+    * solver.BlockGenerationError
+    * solver.AnalysisError
+"""
+
 import collections
 from copy import deepcopy
 import game
@@ -33,6 +45,17 @@ class BlockGenerationError(game.Error):
 
     def __str__(self):
         return self.message + ". Tile: " + str(self.tile_position)
+
+
+class AnalysisError(game.Error):
+    """Exception raised when the solver was not able to isolate tiles to analyze
+
+        Attributes:
+            - message
+        """
+
+    def __init__(self, message):
+        self.message = message
 
 
 class _AwareTile(tile.Tile):
@@ -134,6 +157,32 @@ def _permute(items: int, length: int):
 
 
 class Solver:
+    """
+This class controls a solving algorithm for a game of mines
+the same game object must be passed into every function else this class throws "GameObjectError"
+
+constructor parameters -> g: game.Game
+
+# will use probability to make the best guess of where to click next
+# returns a tuple of co-ordinates and left(True) or right(False) click
+# throws AnalysisError upon failure
+self.best_click(self, g: game.Game) -> (int, int, bool):
+
+# will use probability to make the best guess of where to click next
+# returns true if it was able to make a guess
+def guess(self, g: game.Game) -> bool:
+
+# solves one step of the the board
+# can place multiple flags or reveal multiple tiles in one call if they are obvious
+# will only edit tiles in a way that is guaranteed to be safe
+# returns true if it changed any of the grid tiles
+self.solve_next_step(self, g: game.Game) -> bool:
+
+# solves the game
+# may guess if there is no other choice
+self.solve(self, g:game.Game):
+    """
+
     def __init__(self, g: game.Game):
         # begin the game if it was not already begun
         g.begin()
@@ -180,9 +229,10 @@ class Solver:
         return prob_success
 
     # will use probability to make the best guess of where to click next
-    # returns true if it was able to make a guess
+    # returns a tuple of co-ordinates and left(True) or right(False) click
+    # throws AnalysisError upon failure
     @_consistent_game_check
-    def guess(self, g: game.Game) -> bool:
+    def best_click(self, g: game.Game) -> (int, int, bool):
         self._update_grid(g)
         data = self._do_prob_wave(g, return_data=True)
 
@@ -197,14 +247,13 @@ class Solver:
                         all_covered = False
 
             if all_covered:
-                g.left_mouse_button(0, 0)
-                return True
+                return int(self._size * 0.5), int(self._size * 0.5), True
             else:
-                return False
+                raise AnalysisError("Unable to isolate tiles to compare and evaluate")
 
-        # find the most likely to be a mine or the most likely to be safe and click it
+        # find the most likely to be a mine or the most likely to be safe and return it
 
-        max_prob: float = 0 # %
+        max_prob: float = 0  # %
         max_index: int = -1
         max_is_safe: bool = True
         for i in range(len(data[1])):
@@ -219,7 +268,18 @@ class Solver:
 
         x, y = data[0][max_index]
 
-        if max_is_safe:
+        return x, y, max_is_safe
+
+    # will use probability to make the best guess of where to click next
+    # returns true if it was able to make a guess
+    @_consistent_game_check
+    def guess(self, g: game.Game) -> bool:
+        try:
+            x, y, left_click = self.best_click(g)
+        except AnalysisError:
+            return False
+
+        if left_click:
             g.left_mouse_button(x, y)
         else:
             g.right_mouse_button(x, y)
@@ -228,6 +288,7 @@ class Solver:
 
     # solves the game
     # may guess if there is no other choice
+    @_consistent_game_check
     def solve(self, g:game.Game):
         while not g.game_done():
             success: bool = self.solve_next_step(g)
