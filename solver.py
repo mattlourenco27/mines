@@ -970,6 +970,7 @@ if __name__ == "__main__":
     print("Please use 'L' or 'R' for left or right click followed by coordinates to interact\nEx: L 0 0")
     print("Type 'next' to have the solver analyze the board and place what it can")
     print("Type 'guess' to have the solver use probability to make the best guess it can")
+    print("Type 'best' to have the solver use probability to determine what the next best step is")
     print("Type 'Solve' to have the solver complete the game to the best of its abilities")
 
     solver = Solver(g)
@@ -992,23 +993,35 @@ if __name__ == "__main__":
                     print("Exiting...")
                     quit()
 
-                if values[0].upper() == 'SOLVE':
+                elif values[0].upper() == 'SOLVE':
                     solver.solve(g)
                     break
 
-                if values[0].upper() == 'NEXT':
+                elif values[0].upper() == 'NEXT':
                     success = solver.solve_next_step(g)
                     if not success:
                         print("Unsuccessful")
                     break
 
-                if values[0].upper() == 'GUESS':
+                elif values[0].upper() == 'GUESS':
                     success = solver.guess(g)
                     if not success:
                         print("Unsuccessful")
                     break
 
-                if values[0].upper() != 'L' and values[0].upper() != 'R':
+                elif values[0].upper() == 'BEST':
+                    try:
+                        x, y, left_click = solver.best_click(g)
+                        if left_click:
+                            click = "Left"
+                        else:
+                            click = "Right"
+                        print(click + "-click", x, y)
+                    except AnalysisError:
+                        print("Unsuccessful")
+                    break
+
+                elif values[0].upper() != 'L' and values[0].upper() != 'R':
                     print("Please enter L or R for 'left' or 'right' click")
                     continue
 
