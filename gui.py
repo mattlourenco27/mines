@@ -6,21 +6,37 @@ import pygame
 import game
 import solver
 
+
 class Gui:
-    CANVAS_SIZE = 800
-    COMMANDS_BAR_SIZE = 100
+    CANVAS_SIZE = 900
+    COMMANDS_BAR_SIZE = 200
+    PADDING = 10
 
     # colours
+    BLACK = (0, 0, 0)
+    LIGHT_GRAY = (230, 230, 230)
     GRAY_BLUE = (186, 216, 219)
 
     def __init__(self):
+        # size of the grid
+        self.size = 15
+
+        # number of mines on the grid
+        self.mines = 35
+
         # game clock
         self.clock = pygame.time.Clock()
 
         # screen
-        self.screen = pygame.display.set_mode((Gui.CANVAS_SIZE, Gui.CANVAS_SIZE + Gui.COMMANDS_BAR_SIZE))
+        self.screen = pygame.display.set_mode((Gui.CANVAS_SIZE + Gui.COMMANDS_BAR_SIZE + 2 * Gui.PADDING,
+                                               Gui.CANVAS_SIZE + 2 * Gui.PADDING))
 
-        # Initialize the game
+        # Initialize the mines game
+        self.game = game.Game()
+        self.game.set_size(self.size)
+        self.game.set_mines(self.mines)
+
+        # Initialize pygame
         pygame.init()
 
         pygame.display.set_caption("'Mines' made by mattlourenco27 on Github")
@@ -30,22 +46,47 @@ class Gui:
 
     # Start the gui
     def start(self):
+        # start the game
+        self.game.begin()
+
         # start the game loop
         self._game_loop()
 
     # draw the canvas where the game of mines will show
     def _draw_base_canvas(self):
+        background = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
+        pygame.draw.rect(self.screen, Gui.GRAY_BLUE, background)
+
+        # Draw the row dividers
+        channel_width: float = Gui.CANVAS_SIZE / self.size
+        line_width: int = 3
+        for row_divider in range(0, self.size + 1):
+            pygame.draw.line(self.screen, Gui.BLACK,
+                             (Gui.PADDING, Gui.PADDING + int(row_divider * channel_width)),
+                             (Gui.PADDING + Gui.CANVAS_SIZE, Gui.PADDING + int(row_divider * channel_width)),
+                             line_width)
+
+        # Draw the column dividers
+        for col_divider in range(0, self.size + 1):
+            pygame.draw.line(self.screen, Gui.BLACK,
+                             (Gui.PADDING + int(col_divider * channel_width), Gui.PADDING),
+                             (Gui.PADDING + int(col_divider * channel_width), Gui.PADDING + Gui.CANVAS_SIZE),
+                             line_width)
+
+    # draw the minefield that the game is played on
+    def _draw_minefield(self):
         pass
 
     # draw the command bar with buttons to click
     def _draw_command_bar(self):
         pass
 
-    # draws the mines game and the comman bar
+    # draws the mines game and the command bar
     def _draw_screen(self):
-        self.screen.fill(Gui.GRAY_BLUE)
+        self.screen.fill(Gui.LIGHT_GRAY)
 
         self._draw_base_canvas()
+        self._draw_minefield()
         self._draw_command_bar()
         pygame.display.update()
 
