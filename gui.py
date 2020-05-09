@@ -3,6 +3,7 @@
 # This file defines class and methods used to control the mines GUI
 
 import pygame
+import tile
 import game
 import solver
 
@@ -16,6 +17,13 @@ class Gui:
     BLACK = (0, 0, 0)
     LIGHT_GRAY = (230, 230, 230)
     GRAY_BLUE = (186, 216, 219)
+
+    # characters for minefield
+    BLANK = ' ' # '\u25A1'
+    COVERED = '\u25A8'
+    FLAG = '\u2690'
+    UNKNOWN = '?'
+    MINE = '\u2737'
 
     def __init__(self):
         # size of the grid
@@ -75,7 +83,29 @@ class Gui:
 
     # draw the minefield that the game is played on
     def _draw_minefield(self):
-        pass
+        channel_width = Gui.CANVAS_SIZE / self.size
+        text = pygame.font.Font("assets/fonts/FreeSerif.ttf", int(channel_width))
+
+        for x in range(self.size):
+            for y in range(self.size):
+                # get the state of the tile and determine the character to print
+                tile_state = self.game.get_tile_state(x, y)
+                if tile_state is tile.State.covered:
+                    character = Gui.COVERED
+                elif tile_state is tile.State.visible:
+                    character = self.game.get_tile_value(x, y)
+                elif tile_state is tile.State.flag:
+                    character = Gui.FLAG
+                elif tile_state is tile.State.unknown:
+                    character = Gui.UNKNOWN
+
+                colour = Gui.BLACK
+
+                text_surface = text.render(character, True, colour)
+                text_rect = text_surface.get_rect()
+                text_rect.center = (Gui.PADDING + int((x + 0.5) * channel_width),
+                                    Gui.PADDING + int((y + 0.5) * channel_width))
+                self.screen.blit(text_surface, text_rect)
 
     # draw the command bar with buttons to click
     def _draw_command_bar(self):
