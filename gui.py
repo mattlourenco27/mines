@@ -15,7 +15,9 @@ class Gui:
 
     # colours
     BLACK = (0, 0, 0)
-    LIGHT_GRAY = (230, 230, 230)
+    WHITE = (255, 255, 255)
+    LIGHT_GRAY = (240, 240, 240)
+    MID_LIGHT_GRAY = (220, 220, 220)
     GRAY_BLUE = (186, 216, 219)
 
     # characters for minefield
@@ -108,16 +110,35 @@ class Gui:
                 self.screen.blit(text_surface, text_rect)
 
     # draw the command bar with buttons to click
-    def _draw_command_bar(self):
-        pass
+    def _draw_command_bar(self, mouse_pos):
+        x_off = Gui.CANVAS_SIZE + 2 * Gui.PADDING  # X offset to the command bar
+        y_off = Gui.PADDING # Y offset to the command bar
+
+        # Set up text
+        text = pygame.font.Font(None, 28)
+
+        # Solve board button
+        rect = pygame.Rect(x_off + 25, y_off + 25, 150, 50)
+        if rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
+        else:
+            pygame.draw.rect(self.screen, Gui.WHITE, rect)
+        pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
+        text_surface = text.render("Auto-Solve", True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
+
+        # Step-solve button
+        rect = rect.move(0, 75)
 
     # draws the mines game and the command bar
-    def _draw_screen(self):
+    def _draw_screen(self, mouse_pos):
         self.screen.fill(Gui.LIGHT_GRAY)
 
         self._draw_base_canvas()
         self._draw_minefield()
-        self._draw_command_bar()
+        self._draw_command_bar(mouse_pos)
         pygame.display.update()
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
@@ -130,5 +151,6 @@ class Gui:
                     pygame.quit()
                     quit()
 
-            self._draw_screen()
+            mouse_pos = pygame.mouse.get_pos()
+            self._draw_screen(mouse_pos)
             self.clock.tick(60)
