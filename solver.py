@@ -286,6 +286,15 @@ self.solve(self, g:game.Game):
 
         return True
 
+    # click any tile
+    def _random_guess(self, g: game.Game):
+        # choose a tile to click
+        for x in range(self._size):
+            for y in range(self._size):
+                if self._grid[x][y].state is tile.State.covered:
+                    g.left_mouse_button(x, y)
+                    return
+
     # solves the game
     # may guess if there is no other choice
     @_consistent_game_check
@@ -295,7 +304,11 @@ self.solve(self, g:game.Game):
 
             if not success:
                 print("Guessing . . .")
-                self.guess(g)
+                made_guess: bool = self.guess(g)
+
+                if not made_guess:
+                    self._random_guess(g)
+
 
     # update the local state of the tile at the specified position
     @_consistent_game_check

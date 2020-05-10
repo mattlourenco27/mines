@@ -50,6 +50,9 @@ class Gui:
         self.game.set_size(self.size)
         self.game.set_mines(self.mines)
 
+        # Initialize the solver module
+        self.solver = solver.Solver(self.game)
+
         # the last mine tile where the left mouse was down
         self.last_left_down = (-1, -1)
 
@@ -83,6 +86,7 @@ class Gui:
         self.game.set_mines(mines)
         self.mines = mines
         self.failed_tile = (-1, -1)
+        self.solver = solver.Solver(self.game)
         self.game.begin()
 
     # draw the canvas where the game of mines will show
@@ -230,6 +234,18 @@ class Gui:
         text_rect.center = rect.center
         self.screen.blit(text_surface, text_rect)
 
+        # solve button
+        rect = rect.move(0, 75)
+        if rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
+        else:
+            pygame.draw.rect(self.screen, Gui.WHITE, rect)
+        pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
+        text_surface = text.render("Auto-Solve", True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
+
     # draws victory text
     def _draw_win(self):
         message = "Victory"
@@ -319,6 +335,7 @@ class Gui:
         _8x8_rect = reset_rect.move(0, 75)
         _16x16_rect = _8x8_rect.move(0, 75)
         _25x25_rect = _16x16_rect.move(0, 75)
+        solve_rect = _25x25_rect.move(0, 75)
 
         if reset_rect.collidepoint(mouse_pos):
             self.restart(self.size, self.mines)
@@ -328,6 +345,8 @@ class Gui:
             self.restart(16, 40)
         elif _25x25_rect.collidepoint(mouse_pos):
             self.restart(25, 99)
+        elif solve_rect.collidepoint(mouse_pos):
+            self.solver.solve(self.game)
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):
