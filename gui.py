@@ -96,7 +96,7 @@ class Gui:
     # draw the minefield that the game is played on
     def _draw_minefield(self, mouse_pos):
         channel_width = Gui.CANVAS_SIZE / self.size
-        text = pygame.font.Font("assets/fonts/FreeSerif.ttf", int(channel_width))
+        text = pygame.font.Font("assets/fonts/FreeSerif.ttf", int(channel_width * 0.6))
 
         mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
         mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
@@ -138,14 +138,14 @@ class Gui:
         # Set up text
         text = pygame.font.Font(None, 28)
 
-        # Solve board button
+        # Reset button
         rect = pygame.Rect(x_off + 25, y_off + 25, 150, 50)
         if rect.collidepoint(mouse_pos):
             pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
         else:
             pygame.draw.rect(self.screen, Gui.WHITE, rect)
         pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
-        text_surface = text.render("Auto-Solve", True, Gui.BLACK)
+        text_surface = text.render("Reset", True, Gui.BLACK)
         text_rect = text_surface.get_rect()
         text_rect.center = rect.center
         self.screen.blit(text_surface, text_rect)
@@ -217,7 +217,14 @@ class Gui:
                 self._mouse_command_handler(mouse_pos, mouse_down=False)
 
     def _mouse_command_handler(self, mouse_pos, mouse_down=True):
-        pass
+        x_off = Gui.CANVAS_SIZE + 2 * Gui.PADDING  # X offset to the command bar
+        y_off = Gui.PADDING  # Y offset to the command bar
+
+        reset_rect = pygame.Rect(x_off + 25, y_off + 25, 150, 50)
+
+        if reset_rect.collidepoint(mouse_pos):
+            self.game.reset()
+            self.game.begin()
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):
