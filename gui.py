@@ -31,10 +31,10 @@ class Gui:
 
     def __init__(self):
         # size of the grid
-        self.size = 15
+        self.size = 16
 
         # number of mines on the grid
-        self.mines = 35
+        self.mines = 40
 
         # game clock
         self.clock = pygame.time.Clock()
@@ -138,7 +138,7 @@ class Gui:
         # indicate the number of flags placed
         text = pygame.font.Font("assets/fonts/FreeSerif.ttf", 40)
         message = str(self.game.get_flags()) + " / " + str(self.mines) + " " + Gui.FLAG
-        rect = pygame.Rect(x_off + 25, y_off + 10, 150, 50)
+        rect = pygame.Rect(x_off + 15, y_off + 10, 170, 50)
         text_surface = text.render(message, True, Gui.BLACK)
         text_rect = text_surface.get_rect()
         text_rect.center = rect.center
@@ -159,8 +159,41 @@ class Gui:
         text_rect.center = rect.center
         self.screen.blit(text_surface, text_rect)
 
-        # Step-solve button
+        # 8x8 10 mines button
         rect = rect.move(0, 75)
+        if rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
+        else:
+            pygame.draw.rect(self.screen, Gui.WHITE, rect)
+        pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
+        text_surface = text.render("8x8 10 mines", True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
+
+        # 16x16 40 mines button
+        rect = rect.move(0, 75)
+        if rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
+        else:
+            pygame.draw.rect(self.screen, Gui.WHITE, rect)
+        pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
+        text_surface = text.render("16x16 40 mines", True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
+
+        # 25x25 99 mines button
+        rect = rect.move(0, 75)
+        if rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
+        else:
+            pygame.draw.rect(self.screen, Gui.WHITE, rect)
+        pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
+        text_surface = text.render("25x25 99 mines", True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
 
     # draws the mines game and the command bar
     def _draw_screen(self, mouse_pos):
@@ -229,10 +262,34 @@ class Gui:
         x_off = Gui.CANVAS_SIZE + 2 * Gui.PADDING  # X offset to the command bar
         y_off = Gui.PADDING  # Y offset to the command bar
 
-        reset_rect = pygame.Rect(x_off + 25, y_off + 85, 150, 50)
+        reset_rect = pygame.Rect(x_off + 15, y_off + 85, 170, 50)
+        _8x8_rect = reset_rect.move(0, 75)
+        _16x16_rect = _8x8_rect.move(0, 75)
+        _25x25_rect = _16x16_rect.move(0, 75)
 
         if reset_rect.collidepoint(mouse_pos):
             self.game.reset()
+            self.game.begin()
+        elif _8x8_rect.collidepoint(mouse_pos):
+            self.game.reset()
+            self.game.set_size(8)
+            self.size = 8
+            self.game.set_mines(10)
+            self.mines = 10
+            self.game.begin()
+        elif _16x16_rect.collidepoint(mouse_pos):
+            self.game.reset()
+            self.game.set_size(16)
+            self.size = 16
+            self.game.set_mines(40)
+            self.mines = 40
+            self.game.begin()
+        elif _25x25_rect.collidepoint(mouse_pos):
+            self.game.reset()
+            self.game.set_size(25)
+            self.size = 25
+            self.game.set_mines(99)
+            self.mines = 99
             self.game.begin()
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
@@ -247,7 +304,7 @@ class Gui:
                 else:
                     self._event_handler(event)
 
-            mouse_pos = (-100, -100)
+            mouse_pos = (10000, 10000)
             if pygame.mouse.get_focused():
                 mouse_pos = pygame.mouse.get_pos()
             self._draw_screen(mouse_pos)
