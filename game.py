@@ -107,6 +107,8 @@ self.reset(self): resets the game to the state immediately after constructor is 
 
 self.game_done(self) -> bool: returns true if game is done
 
+self.victory(self) -> bool: returns True if the game was won
+
 self.get_size(self) -> int: returns the size of the board
 
 self.get_mines(self) -> int: returns the number of mines
@@ -167,6 +169,10 @@ self.right_mouse_button(self, x: int, y: int): cycles the state of a covered til
     # returns true if the game is done
     def game_done(self) -> bool:
         return self._state is State.victory or self._state is State.loss
+
+    # returns True if the game was won
+    def victory(self) -> bool:
+        return self._state is State.victory
 
     # returns the size of the board
     def get_size(self) -> int:

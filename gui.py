@@ -21,6 +21,7 @@ class Gui:
     MID_GRAY = (190, 190, 190)
     GRAY_BLUE = (216, 227, 232)
     NAVY_BLUE = (21, 118, 171)
+    RED = (194, 59, 56)
 
     # characters for minefield
     BLANK = ' ' # '\u25A1'
@@ -54,6 +55,9 @@ class Gui:
         # the last mine tile where the right mouse was down
         self.last_right_down = (-1, -1)
 
+        # tile that was pressed when the game was lost
+        self.failed_tile = (-1, -1)
+
         # Initialize pygame
         pygame.init()
 
@@ -69,6 +73,16 @@ class Gui:
 
         # start the game loop
         self._game_loop()
+
+    # restart the game and change the size and mines
+    def restart(self, size, mines):
+        self.game.reset()
+        self.game.set_size(size)
+        self.size = size
+        self.game.set_mines(mines)
+        self.mines = mines
+        self.failed_tile = (-1, -1)
+        self.game.begin()
 
     # draw the canvas where the game of mines will show
     def _draw_base_canvas(self):
@@ -98,8 +112,18 @@ class Gui:
         channel_width = Gui.CANVAS_SIZE / self.size
         text = pygame.font.Font("assets/fonts/FreeSerif.ttf", int(channel_width * 0.6))
 
-        mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
-        mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
+        mouse_x = (mouse_pos[0] - Gui.PADDING)
+        mouse_y = (mouse_pos[1] - Gui.PADDING)
+
+        if mouse_x < 0:
+            mouse_x = -1
+        else:
+            mouse_x = int(mouse_x / channel_width)
+
+        if mouse_y < 0:
+            mouse_y = -1
+        else:
+            mouse_y = int(mouse_y / channel_width)
 
         for x in range(self.size):
             for y in range(self.size):
@@ -121,6 +145,8 @@ class Gui:
 
                 if x == mouse_x and y == mouse_y and tile_state is not tile.State.visible:
                     colour = Gui.MID_GRAY
+                elif (x, y) == self.failed_tile:
+                    colour = Gui.RED
                 else:
                     colour = Gui.BLACK
 
@@ -145,7 +171,7 @@ class Gui:
         self.screen.blit(text_surface, text_rect)
 
         # Set up text for buttons
-        text = pygame.font.Font(None, 28)
+        text = pygame.font.Font("assets/fonts/FreeSans.ttf", 20)
 
         # Reset button
         rect = rect.move(0, 75)
@@ -246,6 +272,9 @@ class Gui:
                         self.game.left_mouse_button(mouse_x, mouse_y)
 
                     self.last_left_down = (-1, -1)
+
+                    if self.game.game_done() and not self.game.victory() and self.failed_tile == (-1, -1):
+                        self.failed_tile = (mouse_x, mouse_y)
                 elif not pygame.mouse.get_pressed()[2] and self.last_right_down != (-1, -1):
                     if (mouse_x, mouse_y) == self.last_right_down:
                         self.game.right_mouse_button(mouse_x, mouse_y)
@@ -268,29 +297,13 @@ class Gui:
         _25x25_rect = _16x16_rect.move(0, 75)
 
         if reset_rect.collidepoint(mouse_pos):
-            self.game.reset()
-            self.game.begin()
+            self.restart(self.size, self.mines)
         elif _8x8_rect.collidepoint(mouse_pos):
-            self.game.reset()
-            self.game.set_size(8)
-            self.size = 8
-            self.game.set_mines(10)
-            self.mines = 10
-            self.game.begin()
+            self.restart(8, 10)
         elif _16x16_rect.collidepoint(mouse_pos):
-            self.game.reset()
-            self.game.set_size(16)
-            self.size = 16
-            self.game.set_mines(40)
-            self.mines = 40
-            self.game.begin()
+            self.restart(16, 40)
         elif _25x25_rect.collidepoint(mouse_pos):
-            self.game.reset()
-            self.game.set_size(25)
-            self.size = 25
-            self.game.set_mines(99)
-            self.mines = 99
-            self.game.begin()
+            self.restart(25, 99)
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):
