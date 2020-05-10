@@ -143,7 +143,7 @@ class Gui:
                 elif tile_state is tile.State.unknown:
                     character = Gui.UNKNOWN
 
-                if x == mouse_x and y == mouse_y and tile_state is not tile.State.visible:
+                if x == mouse_x and y == mouse_y and tile_state is not tile.State.visible and not self.game.game_done():
                     colour = Gui.MID_GRAY
                 elif (x, y) == self.failed_tile:
                     colour = Gui.RED
