@@ -22,6 +22,7 @@ class Gui:
     GRAY_BLUE = (216, 227, 232)
     NAVY_BLUE = (21, 118, 171)
     RED = (194, 59, 56)
+    GREEN = (60, 199, 85)
 
     # characters for minefield
     BLANK = ' ' # '\u25A1'
@@ -87,9 +88,9 @@ class Gui:
     # draw the canvas where the game of mines will show
     def _draw_base_canvas(self):
         background = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
-        pygame.draw.rect(self.screen, Gui.GRAY_BLUE, background)
+        pygame.draw.rect(self.screen, Gui.WHITE, background)
 
-        colour = Gui.NAVY_BLUE
+        colour = Gui.BLACK
 
         # Draw the row dividers
         channel_width: float = Gui.CANVAS_SIZE / self.size
@@ -127,28 +128,36 @@ class Gui:
 
         for x in range(self.size):
             for y in range(self.size):
-                # get the state of the tile and determine the character to print
                 tile_state = self.game.get_tile_state(x, y)
-                if tile_state is tile.State.covered:
-                    character = Gui.COVERED
-                elif tile_state is tile.State.visible:
-                    character = str(self.game.get_tile_value(x, y))
 
-                    if character == '0':
-                        character = Gui.BLANK
-                    elif character == '-1':
-                        character = Gui.MINE
-                elif tile_state is tile.State.flag:
-                    character = Gui.FLAG
-                elif tile_state is tile.State.unknown:
-                    character = Gui.UNKNOWN
-
+                # determine the colour fo the tile
                 if x == mouse_x and y == mouse_y and tile_state is not tile.State.visible and not self.game.game_done():
                     colour = Gui.MID_GRAY
                 elif (x, y) == self.failed_tile:
                     colour = Gui.RED
                 else:
                     colour = Gui.BLACK
+
+                # determine the character to print based on the tile state and value
+                if tile_state is tile.State.covered:
+                    character = Gui.COVERED
+                elif tile_state is tile.State.visible:
+                    value = self.game.get_tile_value(x, y)
+
+                    if value == 0:
+                        character = Gui.BLANK
+                    elif value == -1:
+                        character = Gui.MINE
+                    else:
+                        character = str(value)
+
+                        # change colour based on the value
+                        colour = pygame.Color(0, 0, 0)
+                        colour.hsla = (((value - 1) * 200) % 360, 70, 40, 100)
+                elif tile_state is tile.State.flag:
+                    character = Gui.FLAG
+                elif tile_state is tile.State.unknown:
+                    character = Gui.UNKNOWN
 
                 text_surface = text.render(character, True, colour)
                 text_rect = text_surface.get_rect()
@@ -221,6 +230,17 @@ class Gui:
         text_rect.center = rect.center
         self.screen.blit(text_surface, text_rect)
 
+    # draws victory text
+    def _draw_win(self):
+        message = "Victory"
+        colour = Gui.GREEN
+
+        text = pygame.font.Font("assets/fonts/FreeSerifBoldItalic.ttf", 127)
+        text_surface = text.render(message, True, colour)
+        text_rect = text_surface.get_rect()
+        text_rect.center = (int((Gui.PADDING + Gui.CANVAS_SIZE) * 0.5), int((Gui.PADDING + Gui.CANVAS_SIZE) * 0.5))
+        self.screen.blit(text_surface, text_rect)
+
     # draws the mines game and the command bar
     def _draw_screen(self, mouse_pos):
         self.screen.fill(Gui.LIGHT_GRAY)
@@ -228,6 +248,10 @@ class Gui:
         self._draw_base_canvas()
         self._draw_minefield(mouse_pos)
         self._draw_command_bar(mouse_pos)
+
+        if self.game.victory():
+            self._draw_win()
+
         pygame.display.update()
 
     # handles the pygame events 60 times per second
