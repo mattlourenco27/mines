@@ -18,7 +18,9 @@ class Gui:
     WHITE = (255, 255, 255)
     LIGHT_GRAY = (240, 240, 240)
     MID_LIGHT_GRAY = (220, 220, 220)
-    GRAY_BLUE = (186, 216, 219)
+    MID_GRAY = (190, 190, 190)
+    GRAY_BLUE = (216, 227, 232)
+    NAVY_BLUE = (21, 118, 171)
 
     # characters for minefield
     BLANK = ' ' # '\u25A1'
@@ -67,26 +69,31 @@ class Gui:
         background = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
         pygame.draw.rect(self.screen, Gui.GRAY_BLUE, background)
 
+        colour = Gui.NAVY_BLUE
+
         # Draw the row dividers
         channel_width: float = Gui.CANVAS_SIZE / self.size
-        line_width: int = 3
+        line_width: int = 1
         for row_divider in range(0, self.size + 1):
-            pygame.draw.line(self.screen, Gui.BLACK,
+            pygame.draw.line(self.screen, colour,
                              (Gui.PADDING, Gui.PADDING + int(row_divider * channel_width)),
                              (Gui.PADDING + Gui.CANVAS_SIZE, Gui.PADDING + int(row_divider * channel_width)),
                              line_width)
 
         # Draw the column dividers
         for col_divider in range(0, self.size + 1):
-            pygame.draw.line(self.screen, Gui.BLACK,
+            pygame.draw.line(self.screen, colour,
                              (Gui.PADDING + int(col_divider * channel_width), Gui.PADDING),
                              (Gui.PADDING + int(col_divider * channel_width), Gui.PADDING + Gui.CANVAS_SIZE),
                              line_width)
 
     # draw the minefield that the game is played on
-    def _draw_minefield(self):
+    def _draw_minefield(self, mouse_pos):
         channel_width = Gui.CANVAS_SIZE / self.size
         text = pygame.font.Font("assets/fonts/FreeSerif.ttf", int(channel_width))
+
+        mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
+        mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
 
         for x in range(self.size):
             for y in range(self.size):
@@ -101,7 +108,10 @@ class Gui:
                 elif tile_state is tile.State.unknown:
                     character = Gui.UNKNOWN
 
-                colour = Gui.BLACK
+                if x == mouse_x and y == mouse_y:
+                    colour = Gui.MID_GRAY
+                else:
+                    colour = Gui.BLACK
 
                 text_surface = text.render(character, True, colour)
                 text_rect = text_surface.get_rect()
@@ -137,7 +147,7 @@ class Gui:
         self.screen.fill(Gui.LIGHT_GRAY)
 
         self._draw_base_canvas()
-        self._draw_minefield()
+        self._draw_minefield(mouse_pos)
         self._draw_command_bar(mouse_pos)
         pygame.display.update()
 
