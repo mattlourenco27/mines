@@ -135,11 +135,20 @@ class Gui:
         x_off = Gui.CANVAS_SIZE + 2 * Gui.PADDING  # X offset to the command bar
         y_off = Gui.PADDING # Y offset to the command bar
 
-        # Set up text
+        # indicate the number of flags placed
+        text = pygame.font.Font("assets/fonts/FreeSerif.ttf", 40)
+        message = str(self.game.get_flags()) + " / " + str(self.mines) + " " + Gui.FLAG
+        rect = pygame.Rect(x_off + 25, y_off + 10, 150, 50)
+        text_surface = text.render(message, True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
+
+        # Set up text for buttons
         text = pygame.font.Font(None, 28)
 
         # Reset button
-        rect = pygame.Rect(x_off + 25, y_off + 25, 150, 50)
+        rect = rect.move(0, 75)
         if rect.collidepoint(mouse_pos):
             pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
         else:
@@ -220,7 +229,7 @@ class Gui:
         x_off = Gui.CANVAS_SIZE + 2 * Gui.PADDING  # X offset to the command bar
         y_off = Gui.PADDING  # Y offset to the command bar
 
-        reset_rect = pygame.Rect(x_off + 25, y_off + 25, 150, 50)
+        reset_rect = pygame.Rect(x_off + 25, y_off + 85, 150, 50)
 
         if reset_rect.collidepoint(mouse_pos):
             self.game.reset()
