@@ -48,6 +48,12 @@ class Gui:
         self.game.set_size(self.size)
         self.game.set_mines(self.mines)
 
+        # the last mine tile where the left mouse was down
+        self.last_left_down = (-1, -1)
+
+        # the last mine tile where the right mouse was down
+        self.last_right_down = (-1, -1)
+
         # Initialize pygame
         pygame.init()
 
@@ -102,13 +108,18 @@ class Gui:
                 if tile_state is tile.State.covered:
                     character = Gui.COVERED
                 elif tile_state is tile.State.visible:
-                    character = self.game.get_tile_value(x, y)
+                    character = str(self.game.get_tile_value(x, y))
+
+                    if character == '0':
+                        character = Gui.BLANK
+                    elif character == '-1':
+                        character = Gui.MINE
                 elif tile_state is tile.State.flag:
                     character = Gui.FLAG
                 elif tile_state is tile.State.unknown:
                     character = Gui.UNKNOWN
 
-                if x == mouse_x and y == mouse_y:
+                if x == mouse_x and y == mouse_y and tile_state is not tile.State.visible:
                     colour = Gui.MID_GRAY
                 else:
                     colour = Gui.BLACK
@@ -151,6 +162,63 @@ class Gui:
         self._draw_command_bar(mouse_pos)
         pygame.display.update()
 
+    # handles the pygame events 60 times per second
+    def _event_handler(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # mouse position at the current event
+            mouse_pos = pygame.mouse.get_pos()
+
+            # check if mouse intersects the minefield
+            rect = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
+
+            if rect.collidepoint(mouse_pos):
+                channel_width = Gui.CANVAS_SIZE / self.size
+                mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
+                mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
+
+                if pygame.mouse.get_pressed()[0]:
+                    self.last_left_down = (mouse_x, mouse_y)
+                elif pygame.mouse.get_pressed()[2]:
+                    self.last_right_down = (mouse_x, mouse_y)
+
+            # check if the mouse is over the command bar
+            rect = pygame.Rect(Gui.PADDING + Gui.CANVAS_SIZE, Gui.PADDING, Gui.COMMANDS_BAR_SIZE, Gui.CANVAS_SIZE)
+
+            if rect.collidepoint(mouse_pos):
+                self._mouse_command_handler(mouse_pos, mouse_down=True)
+
+        elif event.type == pygame.MOUSEBUTTONUP:
+            # mouse position at the current event
+            mouse_pos = pygame.mouse.get_pos()
+
+            # check if mouse intersects the minefield
+            rect = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
+
+            if rect.collidepoint(mouse_pos):
+                channel_width = Gui.CANVAS_SIZE / self.size
+                mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
+                mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
+
+                if not pygame.mouse.get_pressed()[0] and self.last_left_down != (-1, -1):
+                    if (mouse_x, mouse_y) == self.last_left_down:
+                        self.game.left_mouse_button(mouse_x, mouse_y)
+
+                    self.last_left_down = (-1, -1)
+                elif not pygame.mouse.get_pressed()[2] and self.last_right_down != (-1, -1):
+                    if (mouse_x, mouse_y) == self.last_right_down:
+                        self.game.right_mouse_button(mouse_x, mouse_y)
+
+                    self.last_right_down = (-1, -1)
+
+            # check if the mouse is over the command bar
+            rect = pygame.Rect(Gui.PADDING + Gui.CANVAS_SIZE, Gui.PADDING, Gui.COMMANDS_BAR_SIZE, Gui.CANVAS_SIZE)
+
+            if rect.collidepoint(mouse_pos):
+                self._mouse_command_handler(mouse_pos, mouse_down=False)
+
+    def _mouse_command_handler(self, mouse_pos, mouse_down=True):
+        pass
+
     # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):
         running = True
@@ -160,7 +228,11 @@ class Gui:
                     # Exit the game
                     pygame.quit()
                     quit()
+                else:
+                    self._event_handler(event)
 
-            mouse_pos = pygame.mouse.get_pos()
+            mouse_pos = (-100, -100)
+            if pygame.mouse.get_focused():
+                mouse_pos = pygame.mouse.get_pos()
             self._draw_screen(mouse_pos)
             self.clock.tick(60)
