@@ -237,6 +237,14 @@ self.solve(self, g:game.Game):
     @_consistent_game_check
     def best_click(self, g: game.Game) -> (int, int, bool):
         self._update_grid(g)
+
+        # do a logic pass first to optimize speed
+        tile_coords = self._do_logic_placement(g, (int(self._size * 0.5), int(self._size * 0.5)), return_tile=True)
+
+        if tile_coords != (-1, -1, True):
+            return tile_coords
+
+        # logic pass failed
         data = self._do_prob_wave(g, return_data=True)
 
         if len(data[0]) == 0:
@@ -367,8 +375,9 @@ self.solve(self, g:game.Game):
     # do a single logical placement of a flag or uncovering a valid covered tile
     # the search starts from the hint starting position
     # returns true if it was successful
+    # if return_tile = True, returns coordinates and bool representing left or right click
     @_consistent_game_check
-    def _do_logic_placement(self, g: game.Game, hint: (int, int)) -> bool:
+    def _do_logic_placement(self, g: game.Game, hint: (int, int), return_tile=False):
 
         self._reset_visited()
         wavefront = collections.deque([hint])
@@ -389,7 +398,10 @@ self.solve(self, g:game.Game):
                 # first check if there are enough flags to satisfy the tile value
                 if flags == self._grid[x][y].get_value() and len(self._grid[x][y].covered) > 0:
                     i, j = self._grid[x][y].covered[0]
-                    g.left_mouse_button(i, j)
+                    if not return_tile:
+                        g.left_mouse_button(i, j)
+                    else:
+                        return i, j, True
                     self._update_tile(g, i, j)
 
                     # if a blank was hit update the whole board
@@ -401,7 +413,10 @@ self.solve(self, g:game.Game):
                 # next check if the number of covered spaces + number of flags is equal to the tile value
                 elif flags + len(self._grid[x][y].covered) == self._grid[x][y].get_value():
                     i, j = self._grid[x][y].covered[0]
-                    g.right_mouse_button(i, j)
+                    if not return_tile:
+                        g.right_mouse_button(i, j)
+                    else:
+                        return i, j, False
                     self._update_tile(g, i, j)
 
                     return True
@@ -413,8 +428,10 @@ self.solve(self, g:game.Game):
                             wavefront.append((i, j))
                             self._visited_tiles.append((i, j))
                             self._grid[i][j].visited = True
-
-        return False
+        if not return_tile:
+            return False
+        else:
+            return -1, -1, True
 
     # reset the visited tiles list
     def _reset_visited(self):
