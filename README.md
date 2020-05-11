@@ -41,7 +41,7 @@ You can find detailed gameplay instructions [here](http://zyxyvy.wordpress.com/2
 ## GUI version of Mines
 1. Visit the project directory in your terminal /  console
 2. Type the following command into the console:
-    * `python3 solver.py`
+    * `python3 run.py`
 3. A gui version of the mines game will begin
 4. The [rules](http://zyxyvy.wordpress.com/2012/08/11/the-rules-of-minesweeper/) of the game are the same as other versions of the game above
 5. Press 'Auto-Solve' at any point to have the AI solve the board
