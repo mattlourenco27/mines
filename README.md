@@ -4,7 +4,7 @@ Created by Matthew Lourenco (mattlourenco27) on github using python3
 * [Game Instructions](#Game-Instructions)
 * [Running the console game module](#Running-the-console-game-module)
 * [Running the console solver module](#Running-the-console-solver-module)
-* [GUI version of mines](#GUI-version-of-mines)
+* [GUI version of Mines](#GUI-version-of-Mines)
 
 ## Game Instructions
 You can find detailed gameplay instructions [here](http://zyxyvy.wordpress.com/2012/08/11/the-rules-of-minesweeper/)
@@ -38,5 +38,11 @@ You can find detailed gameplay instructions [here](http://zyxyvy.wordpress.com/2
         * due to the guesswork and probabilities that are used to solve this game, it is impossible for any solver to have a 100% success rate
         * when there are no more certain safe tiles, the solver takes guesses based on calculated probability to continue
 
-## GUI version of mines
-### wip
+## GUI version of Mines
+1. Visit the project directory in your terminal /  console
+2. Type the following command into the console:
+    * `python3 solver.py`
+3. A gui version of the mines game will begin
+4. The [rules](http://zyxyvy.wordpress.com/2012/08/11/the-rules-of-minesweeper/) of the game are the same as other versions of the game above
+
+**Note**: Please ensure you are using Python3.6 or greater and have pygame1.9.6 or greater installed
