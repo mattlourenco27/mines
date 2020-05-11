@@ -1,6 +1,6 @@
 # Mines
 Created by Matthew Lourenco (mattlourenco27) on github using python3
-
+![GIF of the Mines autosolver](images/auto-solve.gif)
 * [Game Instructions](#Game-Instructions)
 * [Running the console game module](#Running-the-console-game-module)
 * [Running the console solver module](#Running-the-console-solver-module)
@@ -44,5 +44,8 @@ You can find detailed gameplay instructions [here](http://zyxyvy.wordpress.com/2
     * `python3 solver.py`
 3. A gui version of the mines game will begin
 4. The [rules](http://zyxyvy.wordpress.com/2012/08/11/the-rules-of-minesweeper/) of the game are the same as other versions of the game above
+5. Press 'Auto-Solve' at any point to have the AI solve the board
+
+![GIF of the Mines GUI](images/hybrid-solve.gif)
 
 **Note**: Please ensure you are using Python3.6 or greater and have pygame1.9.6 or greater installed
