@@ -2,6 +2,13 @@
 # Created by: Matthew Lourenco
 # This file defines class and methods used to control the mines GUI
 
+"""
+Defines the Gui class that uses pygame to visualize a game of mines
+
+Public objects:
+    * Class gui.Gui
+"""
+
 import pygame
 import tile
 import game
@@ -9,6 +16,13 @@ import solver
 
 
 class Gui:
+    """
+This class controls the GUI to the mines game
+
+# Start the gui
+self.start(self):
+    """
+
     CANVAS_SIZE = 900
     COMMANDS_BAR_SIZE = 200
     PADDING = 10
