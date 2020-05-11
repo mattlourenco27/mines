@@ -12,6 +12,7 @@ class Gui:
     CANVAS_SIZE = 900
     COMMANDS_BAR_SIZE = 200
     PADDING = 10
+    SOLVER_DELAY = 100
 
     # colours
     BLACK = (0, 0, 0)
@@ -53,6 +54,12 @@ class Gui:
         # Initialize the solver module
         self.solver = solver.Solver(self.game)
 
+        # true when the Gui is using the solver module
+        self.solving = False
+
+        # tile that was last edited by the solver
+        self.lastSolvedTile: (int, int) = (-1, -1)
+
         # the last mine tile where the left mouse was down
         self.last_left_down = (-1, -1)
 
@@ -80,6 +87,9 @@ class Gui:
 
     # restart the game and change the size and mines
     def restart(self, size, mines):
+        self.solving = False
+        self.lastSolvedTile = (-1, -1)
+        pygame.time.set_timer(pygame.USEREVENT, 0) # turn off the timer
         self.game.reset()
         self.game.set_size(size)
         self.size = size
@@ -168,6 +178,20 @@ class Gui:
                 text_rect.center = (Gui.PADDING + int((x + 0.5) * channel_width),
                                     Gui.PADDING + int((y + 0.5) * channel_width))
                 self.screen.blit(text_surface, text_rect)
+
+        # draw last edited tile by the solver
+        if self.solving and self.lastSolvedTile != (-1, -1):
+            x, y = self.lastSolvedTile
+            colour = pygame.Color(0, 255, 0, 150)
+            channel_width = Gui.CANVAS_SIZE / self.size
+            rect = pygame.Rect(Gui.PADDING + x * channel_width, Gui.PADDING + y * channel_width,
+                               channel_width, channel_width)
+
+            # Transparent surface
+            overlay = pygame.Surface((channel_width, channel_width), pygame.SRCALPHA)
+            overlay.fill(colour)
+
+            self.screen.blit(overlay, rect)
 
     # draw the command bar with buttons to click
     def _draw_command_bar(self, mouse_pos):
@@ -279,7 +303,7 @@ class Gui:
             # check if mouse intersects the minefield
             rect = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
 
-            if rect.collidepoint(mouse_pos):
+            if rect.collidepoint(mouse_pos) and not self.solving:
                 channel_width = Gui.CANVAS_SIZE / self.size
                 mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
                 mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
@@ -289,12 +313,6 @@ class Gui:
                 elif pygame.mouse.get_pressed()[2]:
                     self.last_right_down = (mouse_x, mouse_y)
 
-            # check if the mouse is over the command bar
-            rect = pygame.Rect(Gui.PADDING + Gui.CANVAS_SIZE, Gui.PADDING, Gui.COMMANDS_BAR_SIZE, Gui.CANVAS_SIZE)
-
-            if rect.collidepoint(mouse_pos):
-                self._mouse_command_handler(mouse_pos, mouse_down=True)
-
         elif event.type == pygame.MOUSEBUTTONUP:
             # mouse position at the current event
             mouse_pos = pygame.mouse.get_pos()
@@ -302,7 +320,7 @@ class Gui:
             # check if mouse intersects the minefield
             rect = pygame.Rect(Gui.PADDING, Gui.PADDING, Gui.CANVAS_SIZE, Gui.CANVAS_SIZE)
 
-            if rect.collidepoint(mouse_pos):
+            if rect.collidepoint(mouse_pos) and not self.solving:
                 channel_width = Gui.CANVAS_SIZE / self.size
                 mouse_x = int((mouse_pos[0] - Gui.PADDING) / channel_width)
                 mouse_y = int((mouse_pos[1] - Gui.PADDING) / channel_width)
@@ -320,14 +338,33 @@ class Gui:
                         self.game.right_mouse_button(mouse_x, mouse_y)
 
                     self.last_right_down = (-1, -1)
-
             # check if the mouse is over the command bar
             rect = pygame.Rect(Gui.PADDING + Gui.CANVAS_SIZE, Gui.PADDING, Gui.COMMANDS_BAR_SIZE, Gui.CANVAS_SIZE)
 
             if rect.collidepoint(mouse_pos):
-                self._mouse_command_handler(mouse_pos, mouse_down=False)
+                self._mouse_command_handler(mouse_pos)
+        elif event.type == pygame.USEREVENT:
+            if not self.game.game_done():
+                # event to edit one tile during the solving sequence
+                pygame.time.set_timer(pygame.USEREVENT, 0)  # pause the timer
+                try:
+                    x, y, left_click = self.solver.best_click(self.game)
+                except solver.AnalysisError:
+                    left_click = True
+                    x, y = self.solver.random_tile()
+                self.lastSolvedTile = (x, y)
+                if left_click:
+                    self.game.left_mouse_button(x, y)
+                else:
+                    self.game.right_mouse_button(x, y)
 
-    def _mouse_command_handler(self, mouse_pos, mouse_down=True):
+                pygame.time.set_timer(pygame.USEREVENT, Gui.SOLVER_DELAY) # continue the timer
+            else:
+                self.solving = False
+                self.lastSolvedTile = (-1, -1)
+                pygame.time.set_timer(pygame.USEREVENT, 0)  # turn off the timer
+
+    def _mouse_command_handler(self, mouse_pos):
         x_off = Gui.CANVAS_SIZE + 2 * Gui.PADDING  # X offset to the command bar
         y_off = Gui.PADDING  # Y offset to the command bar
 
@@ -346,7 +383,8 @@ class Gui:
         elif _25x25_rect.collidepoint(mouse_pos):
             self.restart(25, 99)
         elif solve_rect.collidepoint(mouse_pos):
-            self.solver.solve(self.game)
+            self.solving = True
+            pygame.time.set_timer(pygame.USEREVENT, Gui.SOLVER_DELAY)
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):

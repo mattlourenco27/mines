@@ -172,6 +172,9 @@ self.best_click(self, g: game.Game) -> (int, int, bool):
 # returns true if it was able to make a guess
 def guess(self, g: game.Game) -> bool:
 
+# return any covered tile
+self.random_tile(self) -> (int, int):
+
 # solves one step of the the board
 # can place multiple flags or reveal multiple tiles in one call if they are obvious
 # will only edit tiles in a way that is guaranteed to be safe
@@ -286,14 +289,13 @@ self.solve(self, g:game.Game):
 
         return True
 
-    # click any tile
-    def _random_guess(self, g: game.Game):
+    # return any covered tile
+    def random_tile(self) -> (int, int):
         # choose a tile to click
         for x in range(self._size):
             for y in range(self._size):
                 if self._grid[x][y].state is tile.State.covered:
-                    g.left_mouse_button(x, y)
-                    return
+                    return x, y
 
     # solves the game
     # may guess if there is no other choice
@@ -307,8 +309,8 @@ self.solve(self, g:game.Game):
                 made_guess: bool = self.guess(g)
 
                 if not made_guess:
-                    self._random_guess(g)
-
+                    x, y = self.random_tile()
+                    g.left_mouse_button(x, y)
 
     # update the local state of the tile at the specified position
     @_consistent_game_check
