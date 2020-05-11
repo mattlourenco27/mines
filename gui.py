@@ -270,6 +270,18 @@ class Gui:
         text_rect.center = rect.center
         self.screen.blit(text_surface, text_rect)
 
+        # pause solver button
+        rect = rect.move(0, 75)
+        if rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, Gui.MID_LIGHT_GRAY, rect)
+        else:
+            pygame.draw.rect(self.screen, Gui.WHITE, rect)
+        pygame.draw.rect(self.screen, Gui.BLACK, rect, 5)
+        text_surface = text.render("Pause Solver", True, Gui.BLACK)
+        text_rect = text_surface.get_rect()
+        text_rect.center = rect.center
+        self.screen.blit(text_surface, text_rect)
+
     # draws victory text
     def _draw_win(self):
         message = "Victory"
@@ -373,6 +385,7 @@ class Gui:
         _16x16_rect = _8x8_rect.move(0, 75)
         _25x25_rect = _16x16_rect.move(0, 75)
         solve_rect = _25x25_rect.move(0, 75)
+        pause_solver_rect = solve_rect.move(0, 75)
 
         if reset_rect.collidepoint(mouse_pos):
             self.restart(self.size, self.mines)
@@ -385,6 +398,10 @@ class Gui:
         elif solve_rect.collidepoint(mouse_pos):
             self.solving = True
             pygame.time.set_timer(pygame.USEREVENT, Gui.SOLVER_DELAY)
+        elif pause_solver_rect.collidepoint(mouse_pos):
+            self.solving = False
+            pygame.time.set_timer(pygame.USEREVENT, 0) # pause timer
+            self.lastSolvedTile = (-1, -1)
 
     # game loop that controls the buttons, game, and solver as well as drawing the screen
     def _game_loop(self):
